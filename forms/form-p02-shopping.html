@@ -50,6 +50,7 @@
 <body>
   <div class="sheet">
     <div class="topbar"></div>
+    <canvas class="logo" width="40" height="40" style="display:block;margin:0 0 20px;image-rendering:pixelated;"></canvas>
     <h1>SHOPPING LIST</h1>
     <div class="formcode">FORM P-02 &mdash; PROVISIONS ACQUISITION SCHEDULE</div>
     <div class="meta">
@@ -79,5 +80,20 @@
     <button onclick="window.print()">PRINT / SAVE AS PDF</button>
     <a href="../">BUREAU PORTAL</a>
   </div>
+<script>
+(function(){
+  var c=document.querySelector('canvas.logo'), x=c.getContext('2d');
+  var N=24, S=c.width/N, img=new Image();
+  img.onload=function(){
+    var o=document.createElement('canvas'); o.width=N; o.height=N;
+    var g=o.getContext('2d'); g.drawImage(img,0,0,N,N);
+    var d=g.getImageData(0,0,N,N).data;
+    x.fillStyle='#1a3cff';
+    for(var r=0;r<N;r++)for(var i=0;i<N;i++){var k=(r*N+i)*4;
+      if((d[k]+d[k+1]+d[k+2])/3<150) x.fillRect(i*S,r*S,S,S);}
+  };
+  img.src='../assets/star-96.png';
+})();
+</script>
 </body>
 </html>

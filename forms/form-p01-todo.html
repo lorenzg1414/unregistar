@@ -66,6 +66,7 @@
   <div class="sheet">
     <span class="corner c1">&#10047;</span><span class="corner c2">&#9825;</span>
     <span class="corner c3">&#9825;</span><span class="corner c4">&#10047;</span>
+    <canvas class="logo" width="48" height="48" style="display:block;margin:0 auto 8px;image-rendering:pixelated;"></canvas>
     <h1>to-do list &#9825;</h1>
     <div class="subtitle">&#8902; FORM P-01 &mdash; PERSONAL TASK DECLARATION &#8902;</div>
     <div class="meta">
@@ -89,5 +90,20 @@
     <button onclick="window.print()">print / save as pdf &#9825;</button>
     <a href="../">back to the bureau</a>
   </div>
+<script>
+(function(){
+  var c=document.querySelector('canvas.logo'), x=c.getContext('2d');
+  var N=24, S=c.width/N, img=new Image();
+  img.onload=function(){
+    var o=document.createElement('canvas'); o.width=N; o.height=N;
+    var g=o.getContext('2d'); g.drawImage(img,0,0,N,N);
+    var d=g.getImageData(0,0,N,N).data;
+    x.fillStyle='#ff4f9a';
+    for(var r=0;r<N;r++)for(var i=0;i<N;i++){var k=(r*N+i)*4;
+      if((d[k]+d[k+1]+d[k+2])/3<150) x.fillRect(i*S,r*S,S,S);}
+  };
+  img.src='../assets/star-96.png';
+})();
+</script>
 </body>
 </html>
