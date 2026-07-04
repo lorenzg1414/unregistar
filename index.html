@@ -301,6 +301,11 @@ a:visited { color:#551A8B; }
 .registar-btn:active { border-style:inset; }
 .registar-btn:disabled { color:#888888; cursor:default; }
 .registar-status { font-family:"Courier New",Courier,monospace; font-size:11px; margin-top:8px; min-height:14px; }
+.registar-textarea {
+  font-family:"Courier New",Courier,monospace; font-size:13px; padding:6px;
+  border:2px inset #999999; background-color:#fffff4; width:100%; height:110px;
+  resize:vertical; margin:8px 0; display:block;
+}
 
 .product-entry { border:1px solid #aaaaaa; margin-bottom:16px; background-color:#fafaf8; }
 .product-header-bar {
@@ -648,6 +653,19 @@ a:visited { color:#551A8B; }
           <div class="notice-box">
             <strong>Bureau of Unregistered Articles &amp; Regulatory Standards</strong><br>
             Office hours: Monday&ndash;Friday, 09:00&ndash;17:00 JST
+          </div>
+          <div class="registar-box">
+            <div class="registar-title">FORM CT-01 &mdash; WRITTEN CORRESPONDENCE</div>
+            <div class="registar-body">
+              <p style="margin-bottom:10px;line-height:1.6;">Correspondence may be submitted below. It will be read.</p>
+              <form onsubmit="return bureauSend(this);">
+                <input type="email" name="email" required class="registar-input" placeholder="your@address.tld (for reply)"><br>
+                <textarea name="message" required class="registar-textarea" placeholder="Your correspondence&hellip;"></textarea>
+                <input type="text" name="_honey" value="" style="display:none;" tabindex="-1" autocomplete="off">
+                <button type="submit" class="registar-btn">[ SUBMIT CORRESPONDENCE ]</button>
+                <div class="registar-status"></div>
+              </form>
+            </div>
           </div>
           <div class="memo-ref">
             [Response Time — Via Bureau: 4&ndash;6 weeks. Via internal enquiry: immediate, if conditions are right.]
@@ -1349,6 +1367,19 @@ jaContent['page-contact'] = `<div class="page-header-bar"><span class="page-type
 <strong>未登録物品・規制基準局</strong><br>
 窓口時間：月〜金、09:00〜17:00 JST
 </div>
+<div class="registar-box">
+<div class="registar-title">書式CT-01 — 書面による通信</div>
+<div class="registar-body">
+<p style="margin-bottom:10px;line-height:1.8;">通信は下記より提出できる。読まれる。</p>
+<form onsubmit="return bureauSend(this);">
+<input type="email" name="email" required class="registar-input" placeholder="your@address.tld（返信用）"><br>
+<textarea name="message" required class="registar-textarea" placeholder="通信内容…"></textarea>
+<input type="text" name="_honey" value="" style="display:none;" tabindex="-1" autocomplete="off">
+<button type="submit" class="registar-btn">［ 通信を提出する ］</button>
+<div class="registar-status"></div>
+</form>
+</div>
+</div>
 <div class="memo-ref">[応答時間 — 局経由: 4〜6週間。内部問い合わせ経由: 条件が整えば即時。]</div>
 <div class="page-back"><a href="#" class="gov-button" onclick="showPage('page-home'); return false;">[ &#9664; メインインデックスに戻る ]</a></div>`;
 
@@ -1820,6 +1851,47 @@ window.registarSubmit = function(f) {
     window.location.href = 'mailto:lorenz@floyd.one' +
       '?subject=' + encodeURIComponent('UNREGISTAR shop notification request') +
       '&body=' + encodeURIComponent('Please notify me when the shop is online: ' + email);
+  });
+  return false;
+};
+
+
+// Contact page correspondence — also delivered to lorenz@floyd.one
+window.bureauSend = function(f) {
+  var status = f.querySelector('.registar-status');
+  var btn    = f.querySelector('button');
+  var email  = (f.email.value || '').trim();
+  var msg    = (f.message.value || '').trim();
+  if (f._honey && f._honey.value) return false;
+  status.textContent = 'TRANSMITTING\u2026';
+  status.style.color = '#555555';
+  btn.disabled = true;
+  fetch('https://formsubmit.co/ajax/lorenz@floyd.one', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+    body: JSON.stringify({
+      email: email,
+      _subject: 'UNREGISTAR \u2014 correspondence (Form CT-01)',
+      message: msg,
+      _template: 'table',
+      _captcha: 'false'
+    })
+  }).then(function(r) {
+    if (!r.ok) throw new Error('channel');
+    return r.json();
+  }).then(function() {
+    status.textContent = 'CORRESPONDENCE ACCEPTED. REF: BUR/CT/' + String(Date.now()).slice(-6) +
+      '. RESPONSE TIME: 4\u20136 WEEKS.';
+    status.style.color = '#006600';
+    f.reset();
+    btn.disabled = false;
+  }).catch(function() {
+    status.textContent = 'ELECTRONIC CHANNEL UNAVAILABLE \u2014 OPENING POSTAL FALLBACK\u2026';
+    status.style.color = '#8b0000';
+    btn.disabled = false;
+    window.location.href = 'mailto:lorenz@floyd.one' +
+      '?subject=' + encodeURIComponent('UNREGISTAR correspondence (Form CT-01)') +
+      '&body=' + encodeURIComponent(msg + '\n\n(reply to: ' + email + ')');
   });
   return false;
 };
