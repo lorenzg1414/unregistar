@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FORM P-02 — SHOPPING LIST</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    font-family:"Helvetica Neue",Helvetica,Arial,sans-serif;
+    background:#fbfcff; min-height:100vh; padding:40px 14px; color:#0f1e66;
+    display:flex; flex-direction:column; align-items:center;
+  }
+  .sheet { width:100%; max-width:640px; background:#ffffff; border:1px solid #e3e8fb; padding:52px 56px 40px; }
+  .topbar { height:6px; background:#1a3cff; margin-bottom:44px; }
+  h1 { font-size:26px; font-weight:600; letter-spacing:10px; color:#0d1c72; margin-bottom:6px; }
+  .formcode { font-size:9px; letter-spacing:3px; color:#94a0e8; margin-bottom:40px; }
+  .meta { display:flex; gap:32px; margin-bottom:44px; }
+  .meta div { flex:1; }
+  .meta label { display:block; font-size:9px; letter-spacing:2.5px; color:#8791d6; margin-bottom:6px; }
+  .meta input { width:100%; border:none; border-bottom:1px solid #1a3cff; font:inherit; font-size:14px;
+    color:#0f1e66; padding:4px 0; outline:none; background:transparent; }
+  h2 { font-size:10px; font-weight:600; letter-spacing:3px; color:#1a3cff; margin:34px 0 14px;
+    display:flex; align-items:center; gap:10px; }
+  h2::after { content:""; flex:1; height:1px; background:#e3e8fb; }
+  .item { display:flex; align-items:baseline; gap:14px; padding:8px 0; }
+  .item .num { font-size:10px; color:#b9c1ee; width:20px; letter-spacing:1px; }
+  .item input.what { flex:1; border:none; border-bottom:1px solid #e9edfc; font:inherit; font-size:14px;
+    color:#0f1e66; padding:4px 2px; outline:none; background:transparent; }
+  .item input.what:focus { border-bottom-color:#1a3cff; }
+  .item input.qty { width:52px; border:none; border-bottom:1px solid #e9edfc; font:inherit; font-size:11px;
+    color:#7d88d4; text-align:center; padding:4px 0; outline:none; background:transparent; }
+  .foot { margin-top:48px; display:flex; justify-content:space-between; align-items:baseline; }
+  .foot .note { font-size:10px; letter-spacing:2px; color:#b9c1ee; }
+  .foot .mark { width:10px; height:10px; background:#1a3cff; }
+  .bureau { margin-top:26px; font-size:8px; letter-spacing:2px; color:#ccd3f4; font-family:"Courier New",monospace; }
+  .no-print { margin-top:22px; display:flex; gap:10px; }
+  .no-print button, .no-print a {
+    font-family:inherit; font-size:11px; letter-spacing:2px; color:#fff; background:#1a3cff;
+    border:none; padding:11px 24px; cursor:pointer; text-decoration:none;
+  }
+  .no-print a { background:#ffffff; color:#1a3cff; border:1px solid #1a3cff; }
+  @media print {
+    body { background:#fff; padding:0; }
+    .sheet { border:none; max-width:none; }
+    .no-print { display:none; }
+  }
+</style>
+</head>
+<body>
+  <div class="sheet">
+    <div class="topbar"></div>
+    <h1>SHOPPING LIST</h1>
+    <div class="formcode">FORM P-02 &mdash; PROVISIONS ACQUISITION SCHEDULE</div>
+    <div class="meta">
+      <div><label>DATE</label><input type="text"></div>
+      <div><label>PLACE</label><input type="text"></div>
+      <div><label>BUDGET</label><input type="text"></div>
+    </div>
+    <h2>ESSENTIALS</h2>
+    <div class="item"><span class="num">01</span><input class="what" type="text"><input class="qty" type="text" placeholder="QTY"></div>
+    <div class="item"><span class="num">02</span><input class="what" type="text"><input class="qty" type="text" placeholder="QTY"></div>
+    <div class="item"><span class="num">03</span><input class="what" type="text"><input class="qty" type="text" placeholder="QTY"></div>
+    <div class="item"><span class="num">04</span><input class="what" type="text"><input class="qty" type="text" placeholder="QTY"></div>
+    <div class="item"><span class="num">05</span><input class="what" type="text"><input class="qty" type="text" placeholder="QTY"></div>
+    <div class="item"><span class="num">06</span><input class="what" type="text"><input class="qty" type="text" placeholder="QTY"></div>
+    <h2>OTHERWISE</h2>
+    <div class="item"><span class="num">07</span><input class="what" type="text"><input class="qty" type="text" placeholder="QTY"></div>
+    <div class="item"><span class="num">08</span><input class="what" type="text"><input class="qty" type="text" placeholder="QTY"></div>
+    <div class="item"><span class="num">09</span><input class="what" type="text"><input class="qty" type="text" placeholder="QTY"></div>
+    <div class="item"><span class="num">10</span><input class="what" type="text"><input class="qty" type="text" placeholder="QTY"></div>
+    <div class="foot">
+      <span class="note">KEEP IT SIMPLE.</span>
+      <span class="mark"></span>
+    </div>
+    <div class="bureau">ISSUED BY UNREGISTAR &mdash; ENTIRELY UNNECESSARY &mdash; FOR PRIVATE USE ONLY</div>
+  </div>
+  <div class="no-print">
+    <button onclick="window.print()">PRINT / SAVE AS PDF</button>
+    <a href="../">BUREAU PORTAL</a>
+  </div>
+</body>
+</html>

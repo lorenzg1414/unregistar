@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FORM P-01 — to-do list ♡</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    font-family:"Comic Sans MS","Marker Felt","Chalkboard SE",cursive,sans-serif;
+    background:#ffeef6;
+    background-image:radial-gradient(#ffd3e8 1.5px, transparent 1.5px);
+    background-size:22px 22px;
+    min-height:100vh; padding:30px 14px; color:#d8388a;
+    display:flex; flex-direction:column; align-items:center;
+  }
+  .sheet {
+    width:100%; max-width:680px; background:#fffafd;
+    border:3px dashed #ff9ecb; border-radius:28px;
+    padding:34px 38px 26px; position:relative;
+    box-shadow:0 8px 24px rgba(255,105,180,0.18);
+  }
+  .corner { position:absolute; font-size:20px; color:#ffb3d5; }
+  .c1{top:12px;left:16px} .c2{top:12px;right:16px} .c3{bottom:12px;left:16px} .c4{bottom:12px;right:16px}
+  h1 { text-align:center; font-size:34px; color:#ff4f9a; letter-spacing:1px; margin-bottom:2px; }
+  .subtitle { text-align:center; font-size:11px; color:#f19ac2; margin-bottom:20px; letter-spacing:2px; }
+  .meta { display:flex; gap:18px; justify-content:center; margin-bottom:22px; flex-wrap:wrap; font-size:14px; }
+  .meta label { color:#ef7fb4; }
+  .meta input {
+    border:none; border-bottom:2px dotted #ffabd2; background:transparent;
+    font:inherit; color:#d8388a; width:110px; padding:2px 4px; outline:none; text-align:center;
+  }
+  .row { display:flex; align-items:center; gap:12px; padding:7px 0; }
+  .row input[type="checkbox"] {
+    appearance:none; -webkit-appearance:none; width:26px; height:26px;
+    cursor:pointer; position:relative; flex:none;
+  }
+  .row input[type="checkbox"]::before {
+    content:"\2661"; position:absolute; inset:0; font-size:24px; line-height:26px;
+    text-align:center; color:#ff8ec2;
+  }
+  .row input[type="checkbox"]:checked::before { content:"\2665"; color:#ff2d87; }
+  .row input[type="text"] {
+    flex:1; border:none; border-bottom:2px dotted #ffc2dd; background:transparent;
+    font:inherit; font-size:16px; color:#c22a77; padding:3px 4px; outline:none;
+  }
+  .row input[type="checkbox"]:checked + input[type="text"] { text-decoration:line-through; color:#f0a7ca; }
+  .footer { text-align:center; margin-top:22px; font-size:15px; color:#ff6fae; }
+  .bureau { text-align:center; margin-top:14px; font-size:8px; letter-spacing:1px; color:#e8b9d2;
+    font-family:"Courier New",monospace; }
+  .no-print { margin-top:20px; display:flex; gap:10px; }
+  .no-print button, .no-print a {
+    font-family:inherit; font-size:14px; color:#fff; background:#ff77b6; border:none;
+    border-radius:999px; padding:9px 22px; cursor:pointer; text-decoration:none;
+    box-shadow:0 3px 0 #e5539a;
+  }
+  .no-print a { background:#ffc2dd; box-shadow:0 3px 0 #f0a0c6; color:#b3407e; }
+  @media print {
+    body { background:#fff; padding:0; }
+    .sheet { box-shadow:none; max-width:none; }
+    .no-print { display:none; }
+  }
+</style>
+</head>
+<body>
+  <div class="sheet">
+    <span class="corner c1">&#10047;</span><span class="corner c2">&#9825;</span>
+    <span class="corner c3">&#9825;</span><span class="corner c4">&#10047;</span>
+    <h1>to-do list &#9825;</h1>
+    <div class="subtitle">&#8902; FORM P-01 &mdash; PERSONAL TASK DECLARATION &#8902;</div>
+    <div class="meta">
+      <span><label>date:</label> <input type="text"></span>
+      <span><label>today's mood:</label> <input type="text" placeholder="&#9825;&#9825;&#9825;"></span>
+    </div>
+    <div class="row"><input type="checkbox"><input type="text"></div>
+    <div class="row"><input type="checkbox"><input type="text"></div>
+    <div class="row"><input type="checkbox"><input type="text"></div>
+    <div class="row"><input type="checkbox"><input type="text"></div>
+    <div class="row"><input type="checkbox"><input type="text"></div>
+    <div class="row"><input type="checkbox"><input type="text"></div>
+    <div class="row"><input type="checkbox"><input type="text"></div>
+    <div class="row"><input type="checkbox"><input type="text"></div>
+    <div class="row"><input type="checkbox"><input type="text"></div>
+    <div class="row"><input type="checkbox"><input type="text"></div>
+    <div class="footer">you've got this!! &#9825;&#9825;</div>
+    <div class="bureau">ISSUED BY UNREGISTAR &mdash; ENTIRELY UNNECESSARY &mdash; FOR PRIVATE USE ONLY</div>
+  </div>
+  <div class="no-print">
+    <button onclick="window.print()">print / save as pdf &#9825;</button>
+    <a href="../">back to the bureau</a>
+  </div>
+</body>
+</html>
