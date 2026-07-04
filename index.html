@@ -254,13 +254,14 @@ a:visited { color:#551A8B; }
   padding:2px 12px; letter-spacing:4px; transform:rotate(-12deg);
   position:absolute; right:20px; top:8px;
 }
-/* HOME — spinning pixel star */
-.home-star {
-  width:192px; height:192px;
+/* HOME — pixel star, horizontal coin spin */
+.home-star-wrap { display:inline-block; perspective:520px; }
+.home-star-canvas {
+  display:block; width:200px; height:200px;
   image-rendering:pixelated; image-rendering:crisp-edges;
-  animation:starSpin 8s steps(32) infinite;
+  animation:starTurn 4.5s steps(18) infinite;
 }
-@keyframes starSpin { to { transform:rotate(360deg); } }
+@keyframes starTurn { to { transform:rotateY(360deg); } }
 
 /* LED "AVAILABLE SOON" PANEL */
 .led-panel {
@@ -525,11 +526,16 @@ a:visited { color:#551A8B; }
              HOME
              ================================================ -->
         <div class="page-section" id="page-home">
-          <div style="text-align:center;padding:56px 10px 64px;">
-            <img src="assets/star-96.png" alt="UNREGISTAR star" class="home-star">
-            <h1 style="border-bottom:none;font-size:28px;letter-spacing:3px;margin:36px 0 14px;">WELCOME TO UNREGISTAR</h1>
-            <p style="font-size:14px;color:#444444;text-align:center;">The Bureau is glad you exist.</p>
+          <div class="page-header-bar"><span class="page-type-badge">PUBLIC PORTAL</span> &nbsp; BUR/HOME/1998/01 &mdash; WELCOME</div>
+          <div style="text-align:center;padding:36px 10px 28px;">
+            <div class="home-star-wrap"><canvas class="home-star-canvas" width="200" height="200"></canvas></div>
+            <h1 style="border-bottom:none;font-size:28px;letter-spacing:3px;margin:26px 0 12px;">WELCOME TO UNREGISTAR</h1>
+            <p style="font-size:14px;color:#444444;text-align:center;margin-bottom:28px;">The Bureau is glad you exist.</p>
+            <div class="memo-ref" style="text-align:center;">[PORTAL STATUS: OPERATIONAL &mdash; All sections are located where they are.]</div>
           </div>
+          <p class="small-grey" style="border-top:1px solid #dddddd;padding-top:8px;line-height:1.6;">
+            <sup>*</sup> This page intentionally contains almost nothing. The Bureau considers this sufficient.
+          </p>
         </div>
         <!-- /page-home -->
 
@@ -1208,6 +1214,7 @@ function showPage(id) {
     if (t) t.style.display = 'block';
   }
   if (id === 'page-records-request' && typeof gameReInit === 'function') setTimeout(gameReInit, 0);
+  if (id === 'page-home' && typeof homeStarInit === 'function') setTimeout(homeStarInit, 0);
   window.scrollTo(0, 0);
 }
 
@@ -1282,11 +1289,14 @@ var LABELS = {
 
 var jaContent = {};
 
-jaContent['page-home'] = `<div style="text-align:center;padding:56px 10px 64px;">
-<img src="assets/star-96.png" alt="UNREGISTAR star" class="home-star">
-<h1 style="border-bottom:none;font-size:28px;letter-spacing:3px;margin:36px 0 14px;">UNREGISTARへようこそ</h1>
-<p style="font-size:14px;color:#444444;text-align:center;">局はあなたの存在を喜んでいる。</p>
-</div>`;
+jaContent['page-home'] = `<div class="page-header-bar"><span class="page-type-badge">公開ポータル</span> &nbsp; BUR/HOME/1998/01 &mdash; ようこそ</div>
+<div style="text-align:center;padding:36px 10px 28px;">
+<div class="home-star-wrap"><canvas class="home-star-canvas" width="200" height="200"></canvas></div>
+<h1 style="border-bottom:none;font-size:28px;letter-spacing:3px;margin:26px 0 12px;">UNREGISTARへようこそ</h1>
+<p style="font-size:14px;color:#444444;text-align:center;margin-bottom:28px;">局はあなたの存在を喜んでいる。</p>
+<div class="memo-ref" style="text-align:center;">［ポータル状況：稼働中 — すべてのセクションは、それがある場所にある。］</div>
+</div>
+<p class="small-grey" style="border-top:1px solid #dddddd;padding-top:8px;line-height:1.8;"><sup>＊</sup>本ページには意図的にほとんど何も掲載されていない。局はこれで十分であると考える。</p>`;
 
 jaContent['page-about'] = `<div class="page-header-bar">
 <span class="page-type-badge">局声明</span> &nbsp; BUR/STMT/1998/01
@@ -1748,11 +1758,37 @@ function setLang(lang) {
     var recPage = document.getElementById('page-records-request');
     if (recPage && recPage.style.display === 'block') setTimeout(gameReInit, 10);
   }
+  if (typeof homeStarInit === 'function') setTimeout(homeStarInit, 10);
 }
 
 function toggleLang() {
   setLang(currentLang === 'en' ? 'ja' : 'en');
 }
+
+// Home star: threshold the logo into true 40x40 pixel blocks on a canvas.
+// Re-run after any innerHTML swap that recreates the canvas (lang toggle).
+var _starImg = null;
+function homeStarInit() {
+  var cv = document.querySelector('.home-star-canvas');
+  if (!cv) return;
+  function draw() {
+    var N = 40, S = cv.width / N, ctx = cv.getContext('2d');
+    var oc = document.createElement('canvas'); oc.width = N; oc.height = N;
+    var o = oc.getContext('2d');
+    o.drawImage(_starImg, 0, 0, N, N);
+    var d = o.getImageData(0, 0, N, N).data;
+    ctx.clearRect(0, 0, cv.width, cv.height);
+    ctx.fillStyle = '#00006a';
+    for (var y = 0; y < N; y++) for (var x = 0; x < N; x++) {
+      var i = (y * N + x) * 4;
+      var lum = (d[i] + d[i+1] + d[i+2]) / 3;
+      if (d[i+3] > 128 && lum < 150) ctx.fillRect(x * S, y * S, S, S);
+    }
+  }
+  if (_starImg && _starImg.complete) { draw(); }
+  else { _starImg = new Image(); _starImg.onload = draw; _starImg.src = 'assets/star-96.png'; }
+}
+homeStarInit();
 
 // Hit counter cosmetic increment — random starting figure per visit
 var counterEl = document.getElementById('hit-counter');
