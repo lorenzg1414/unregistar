@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FORM P-09 — Idea DOC</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    font-family:"Marker Felt","Chalkboard SE","Comic Sans MS",cursive,sans-serif;
+    background:#8a8578; min-height:100vh; padding:44px 14px; color:#191919;
+    display:flex; flex-direction:column; align-items:center;
+  }
+  .sheet {
+    width:100%; max-width:620px; background:#ffe66d;
+    box-shadow:6px 8px 0 rgba(0,0,0,0.35);
+    padding:38px 42px 26px; transform:rotate(-0.8deg); position:relative;
+  }
+  .tape {
+    position:absolute; top:-14px; left:50%; transform:translateX(-50%) rotate(2deg);
+    width:120px; height:28px; background:rgba(255,255,255,0.55); border:1px solid rgba(0,0,0,0.08);
+  }
+  h1 { font-size:34px; letter-spacing:1px; }
+  h1 span { color:#d7263d; }
+  .sub { font-size:10px; letter-spacing:3px; color:#8a7a1e; font-family:"Courier New",monospace; margin:4px 0 10px; }
+  .hint { font-size:14px; margin-bottom:18px; }
+  .hint em { background:#191919; color:#ffe66d; font-style:normal; padding:0 5px; }
+  textarea {
+    width:100%; border:none; background:transparent; resize:none; outline:none;
+    font:inherit; font-size:17px; color:#191919; line-height:36px;
+    background-image:repeating-linear-gradient(transparent, transparent 35px, rgba(25,25,25,0.25) 35px, rgba(25,25,25,0.25) 36px);
+  }
+  .after { margin-top:18px; display:flex; align-items:center; gap:10px; font-size:14px; }
+  .after input { appearance:none; -webkit-appearance:none; width:20px; height:20px;
+    border:2px solid #191919; background:transparent; cursor:pointer; flex:none; }
+  .after input:checked { background:#d7263d; }
+  .bureau { text-align:center; margin-top:16px; font-size:8px; letter-spacing:2px; color:#a89732; font-family:"Courier New",monospace; }
+  .no-print { margin-top:24px; display:flex; gap:10px; }
+  .no-print button, .no-print a {
+    font-family:inherit; font-size:14px; color:#ffe66d; background:#191919; border:none;
+    padding:10px 22px; cursor:pointer; text-decoration:none; transform:rotate(-1deg);
+  }
+  .no-print a { background:#d7263d; color:#fff; transform:rotate(1deg); }
+  @media print {
+    body { background:#fff; padding:0; }
+    .sheet { box-shadow:none; transform:none; max-width:none; }
+    .tape { display:none; }
+    .no-print { display:none; }
+  }
+</style>
+</head>
+<body>
+  <div class="sheet">
+    <div class="tape"></div>
+    <canvas class="logo" width="44" height="44" style="display:block;margin:0 auto 8px;"></canvas>
+    <h1>IDEA <span>DOC</span></h1>
+    <div class="sub">FORM P-09 &mdash; IDEA DEPOSIT DOCUMENT</div>
+    <div class="hint">One page. Dump them all here so they <em>stop haunting you at 2 a.m.</em> Quality is not a requirement. Writing it down is.</div>
+
+    <textarea rows="12" placeholder="it doesn't have to be good. it has to be out of your head."></textarea>
+
+    <div class="after">
+      <input type="checkbox" id="done">
+      <label for="done">ideas deposited. brain permitted to sleep.</label>
+    </div>
+    <div class="bureau">ISSUED BY UNREGISTAR &mdash; ENTIRELY UNNECESSARY &mdash; FOR PRIVATE USE ONLY</div>
+  </div>
+  <div class="no-print">
+    <button onclick="window.print()">print / save as pdf</button>
+    <a href="../">bureau portal</a>
+  </div>
+<script>
+(function(){
+  var c=document.querySelector('canvas.logo'), x=c.getContext('2d');
+  var img=new Image();
+  img.onload=function(){
+    var N=96, o=document.createElement('canvas'); o.width=N; o.height=N;
+    var g=o.getContext('2d'); g.drawImage(img,0,0,N,N);
+    var id=g.getImageData(0,0,N,N), d=id.data;
+    var R=0x19,G=0x19,B=0x19;
+    for(var i=0;i<d.length;i+=4){
+      var a=255-(d[i]+d[i+1]+d[i+2])/3;
+      d[i]=R; d[i+1]=G; d[i+2]=B; d[i+3]=Math.max(0,Math.min(255,a*1.15));
+    }
+    g.putImageData(id,0,0);
+    x.imageSmoothingEnabled=true; x.imageSmoothingQuality='high';
+    x.drawImage(o,0,0,c.width,c.height);
+  };
+  img.src='../assets/star-96.png';
+})();
+</script>
+</body>
+</html>

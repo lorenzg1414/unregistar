@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FORM P-06 — Color Energy Guide</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    font-family:"Helvetica Neue",Helvetica,Arial,sans-serif;
+    background:#f5f5f3; min-height:100vh; padding:40px 14px; color:#151515;
+    display:flex; flex-direction:column; align-items:center;
+  }
+  .sheet { width:100%; max-width:640px; background:#ffffff; border:1px solid #e2e2de; padding:50px 54px 36px; }
+  h1 { font-size:24px; font-weight:700; letter-spacing:2px; text-transform:uppercase; }
+  .sub { font-size:9px; letter-spacing:3px; color:#9a9a94; margin:6px 0 8px; }
+  .hint { font-size:12px; color:#6a6a64; margin-bottom:30px; }
+  .row { display:flex; gap:16px; align-items:flex-start; padding:13px 0; border-bottom:1px solid #eeeeea; }
+  .dot { width:34px; height:34px; border-radius:50%; flex:none; margin-top:2px; }
+  .row b { display:block; font-size:11px; letter-spacing:2.5px; text-transform:uppercase; margin-bottom:3px; }
+  .row p { font-size:12.5px; line-height:1.5; color:#3c3c38; }
+  .row p em { color:#9a9a94; font-style:normal; }
+  .notes { margin-top:26px; }
+  .notes label { font-size:9px; letter-spacing:3px; color:#9a9a94; }
+  .notes input { width:100%; border:none; border-bottom:1px solid #151515; font:inherit; font-size:13px;
+    padding:6px 0; outline:none; background:transparent; }
+  .bureau { margin-top:26px; font-size:8px; letter-spacing:2px; color:#c8c8c2; font-family:"Courier New",monospace; }
+  .no-print { margin-top:22px; display:flex; gap:10px; }
+  .no-print button, .no-print a {
+    font-family:inherit; font-size:11px; letter-spacing:2px; color:#fff; background:#151515;
+    border:none; padding:11px 24px; cursor:pointer; text-decoration:none;
+  }
+  .no-print a { background:#fff; color:#151515; border:1px solid #151515; }
+  @media print {
+    body { background:#fff; padding:0; }
+    .sheet { border:none; max-width:none; }
+    .no-print { display:none; }
+  }
+</style>
+</head>
+<body>
+  <div class="sheet">
+    <canvas class="logo" width="40" height="40" style="display:block;margin:0 0 18px;"></canvas>
+    <h1>Color Energy Guide</h1>
+    <div class="sub">FORM P-06 &mdash; CHROMATIC ENERGY DIRECTIVE</div>
+    <div class="hint">What each color channels, and when to wear it. Scientifically unverified. Anecdotally undefeated.</div>
+
+    <div class="row"><span class="dot" style="background:#d7263d;"></span>
+      <div><b>Red</b><p>Channels confidence, heat, first moves. <em>Wear for: negotiations, stages, doors you have to walk through only once.</em></p></div></div>
+    <div class="row"><span class="dot" style="background:#f46036;"></span>
+      <div><b>Orange</b><p>Channels play, appetite, saying yes. <em>Wear for: reunions, road trips, second chances.</em></p></div></div>
+    <div class="row"><span class="dot" style="background:#f7c548;"></span>
+      <div><b>Yellow</b><p>Channels luck, morning energy, being seen kindly. <em>Wear for: interviews, apologies, Mondays.</em></p></div></div>
+    <div class="row"><span class="dot" style="background:#2e933c;"></span>
+      <div><b>Green</b><p>Channels renewal, growth, quiet money. <em>Wear for: fresh starts, difficult phone calls, spring.</em></p></div></div>
+    <div class="row"><span class="dot" style="background:#1b6ca8;"></span>
+      <div><b>Blue</b><p>Channels calm, clarity, being believed. <em>Wear for: hard conversations, long days, telling the truth.</em></p></div></div>
+    <div class="row"><span class="dot" style="background:#6d3b9e;"></span>
+      <div><b>Violet</b><p>Channels intuition, strangeness, the third option. <em>Wear for: decisions, full moons, art.</em></p></div></div>
+    <div class="row"><span class="dot" style="background:#f2a0c0;"></span>
+      <div><b>Pink</b><p>Channels tenderness, self-forgiveness, soft power. <em>Wear for: birthdays, endings, being gentle on purpose.</em></p></div></div>
+    <div class="row"><span class="dot" style="background:#151515;"></span>
+      <div><b>Black</b><p>Channels resolve, edges, saying no. <em>Wear for: boundaries, cities, getting things done.</em></p></div></div>
+    <div class="row" style="border-bottom:none;"><span class="dot" style="background:#ffffff;border:1px solid #d9d9d3;"></span>
+      <div><b>White</b><p>Channels reset, blankness, beginning again. <em>Wear for: day one. Any day can be day one.</em></p></div></div>
+
+    <div class="notes">
+      <label>TODAY I NEED &mdash; SO I WEAR</label>
+      <input type="text">
+    </div>
+    <div class="bureau">ISSUED BY UNREGISTAR &mdash; ENTIRELY UNNECESSARY &mdash; FOR PRIVATE USE ONLY</div>
+  </div>
+  <div class="no-print">
+    <button onclick="window.print()">PRINT / SAVE AS PDF</button>
+    <a href="../">BUREAU PORTAL</a>
+  </div>
+<script>
+(function(){
+  var c=document.querySelector('canvas.logo'), x=c.getContext('2d');
+  var img=new Image();
+  img.onload=function(){
+    var N=96, o=document.createElement('canvas'); o.width=N; o.height=N;
+    var g=o.getContext('2d'); g.drawImage(img,0,0,N,N);
+    var id=g.getImageData(0,0,N,N), d=id.data;
+    var R=0x15,G=0x15,B=0x15;
+    for(var i=0;i<d.length;i+=4){
+      var a=255-(d[i]+d[i+1]+d[i+2])/3;
+      d[i]=R; d[i+1]=G; d[i+2]=B; d[i+3]=Math.max(0,Math.min(255,a*1.15));
+    }
+    g.putImageData(id,0,0);
+    x.imageSmoothingEnabled=true; x.imageSmoothingQuality='high';
+    x.drawImage(o,0,0,c.width,c.height);
+  };
+  img.src='../assets/star-96.png';
+})();
+</script>
+</body>
+</html>
