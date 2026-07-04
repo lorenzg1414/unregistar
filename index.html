@@ -389,52 +389,15 @@ a:visited { color:#551A8B; }
       <td width="74" valign="middle">
         <!-- OFFICIAL SEAL — star + heart -->
         <svg width="68" height="68" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg" aria-label="Bureau Seal">
-          <!-- outer ring -->
           <circle cx="60" cy="60" r="57" fill="#d8d4cc" stroke="#00006a" stroke-width="3"/>
-          <!-- dashed decorative ring -->
           <circle cx="60" cy="60" r="50" fill="none" stroke="#00006a" stroke-width="1" stroke-dasharray="3,4"/>
-          <!-- inner solid ring -->
-          <circle cx="60" cy="60" r="44" fill="none" stroke="#00006a" stroke-width="1.5"/>
-
-          <!-- STAR: centre (60,58), outer r=27, inner r=11 -->
-          <polygon
-            points="60,31 66.5,48.1 85.7,48.7 70.5,60.4 75.9,78.8 60,68 44.1,78.8 49.5,60.4 34.3,48.7 53.5,48.1"
-            fill="#00006a"/>
-
-          <!-- HEART inside star (background-colour fill = cut-out effect) -->
+          <polygon points="60,31 66.5,48.1 85.7,48.7 70.5,60.4 75.9,78.8 60,68 44.1,78.8 49.5,60.4 34.3,48.7 53.5,48.1" fill="#00006a"/>
           <path d="M60,65 C60,65 54.5,61 54.5,57.5 C54.5,55.5 56,54.5 57.5,54.5 C58.8,54.5 60,56 60,56 C60,56 61.2,54.5 62.5,54.5 C64,54.5 65.5,55.5 65.5,57.5 C65.5,61 60,65 60,65Z" fill="#d8d4cc"/>
-
-          <!-- Laurel left -->
-          <ellipse cx="24" cy="62" rx="5" ry="2.5" fill="#00006a" transform="rotate(-30,24,62)"/>
-          <ellipse cx="22" cy="56" rx="5" ry="2.5" fill="#00006a" transform="rotate(-50,22,56)"/>
-          <ellipse cx="24" cy="50" rx="5" ry="2.5" fill="#00006a" transform="rotate(-70,24,50)"/>
-          <ellipse cx="28" cy="45" rx="5" ry="2.5" fill="#00006a" transform="rotate(-85,28,45)"/>
-          <!-- Laurel right -->
-          <ellipse cx="96" cy="62" rx="5" ry="2.5" fill="#00006a" transform="rotate(30,96,62)"/>
-          <ellipse cx="98" cy="56" rx="5" ry="2.5" fill="#00006a" transform="rotate(50,98,56)"/>
-          <ellipse cx="96" cy="50" rx="5" ry="2.5" fill="#00006a" transform="rotate(70,96,50)"/>
-          <ellipse cx="92" cy="45" rx="5" ry="2.5" fill="#00006a" transform="rotate(85,92,45)"/>
-
-          <!-- Three small stars at top -->
-          <text x="60" y="14" font-family="Arial" font-size="7" text-anchor="middle" fill="#00006a">&#9733; &#9733; &#9733;</text>
-
-          <!-- Arc text -->
-          <defs>
-            <path id="ta" d="M 8,60 A 52,52 0 0,1 112,60"/>
-            <path id="ba" d="M 14,68 A 50,50 0 0,0 106,68"/>
-          </defs>
-          <text font-family="Arial" font-size="9" font-weight="bold" fill="#00006a" letter-spacing="2">
-            <textPath href="#ta" startOffset="3%">UNREGISTAR · BUREAU ·</textPath>
-          </text>
-          <text font-family="Arial" font-size="7.5" fill="#00006a" letter-spacing="1.5">
-            <textPath href="#ba" startOffset="6%">EST. MCMXCIII · TOKYO</textPath>
-          </text>
         </svg>
       </td>
       <td valign="middle" style="padding-left:12px;">
         <div class="agency-name">UNREGISTAR</div>
         <div class="agency-sub" data-i18n="header-sub">Bureau of Unregistered Articles &amp; Regulatory Standards</div>
-        <div class="agency-sub" data-i18n="header-ministry">Ministry of Regulatory Compliance &mdash; Japan</div>
         <div class="agency-motto">&ldquo;Amor Sit Omnium Princeps&rdquo;</div>
       </td>
       <td class="header-meta" valign="top">
@@ -1240,7 +1203,6 @@ var LABELS = {
     'sidebar-nav-title':'Navigation','sidebar-forms-title':'Forms',
     'sidebar-hours-title':'Office Hours','sidebar-notice-title':'Notice [9-C]',
     'header-sub':'Bureau of Unregistered Articles &amp; Regulatory Standards',
-    'header-ministry':'Ministry of Regulatory Compliance &mdash; Japan',
     'marquee':'&nbsp;&nbsp;&nbsp;&nbsp;NOTICE: Registration portal unavailable 18 NOV 1998 02:00&ndash;06:00 JST for scheduled maintenance. All Form 7-UR submissions due by 17 NOV 1998.&nbsp;&nbsp;&nbsp;&#9658;&nbsp;&nbsp;&nbsp;ATTENTION: Articles under Classification Directive 14-C subject to pending regulatory review. Unauthorised access to restricted inventory sections prohibited pursuant to Article 9, Section 3.&nbsp;&nbsp;&nbsp;&#9658;&nbsp;&nbsp;&nbsp;This site is best viewed in Netscape Navigator 4.0 at 800&#215;600 resolution.&nbsp;&nbsp;&nbsp;&nbsp;'
   },
   ja: {
@@ -1259,7 +1221,6 @@ var LABELS = {
     'sidebar-nav-title':'ナビゲーション','sidebar-forms-title':'書式',
     'sidebar-hours-title':'窓口時間','sidebar-notice-title':'通知 [9-C]',
     'header-sub':'Bureau of Unregistered Articles &amp; Regulatory Standards',
-    'header-ministry':'Ministry of Regulatory Compliance &mdash; Japan',
     'marquee':'&nbsp;&nbsp;&nbsp;&nbsp;通知：定期メンテナンスのため登録ポータルは1998年11月18日 02:00〜06:00 JST停止予定。書式7-UR提出期限：1998年11月17日。&nbsp;&nbsp;&nbsp;&#9658;&nbsp;&nbsp;&nbsp;注意：分類指令14-C対象物品は規制審査待ち。指令9条3節に基づき制限付き在庫セクションへの不正アクセス禁止。&nbsp;&nbsp;&nbsp;&#9658;&nbsp;&nbsp;&nbsp;本サイトはNetscape Navigator 4.0、解像度800×600での閲覧を推奨。&nbsp;&nbsp;&nbsp;&nbsp;'
   }
 };
