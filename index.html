@@ -263,31 +263,17 @@ a:visited { color:#551A8B; }
 }
 @keyframes starTurn { to { transform:rotateY(360deg); } }
 
-/* LED "AVAILABLE SOON" PANEL */
-.led-panel {
-  background-color:#0a0a0a; border:3px inset #777777;
-  padding:30px 10px 24px 10px; text-align:center; margin:18px 0; position:relative; overflow:hidden;
+/* AVAILABLE SOON — joyful pixel sign */
+.soon-panel {
+  background-color:#eaf6ff; border:1px solid #c9dcee;
+  padding:26px 10px 22px; text-align:center; margin:18px 0;
 }
-.led-panel::after {
-  content:''; position:absolute; top:0; left:0; right:0; bottom:0;
-  background:repeating-linear-gradient(0deg,rgba(0,0,0,0.38) 0 1px,transparent 1px 3px),
-             repeating-linear-gradient(90deg,rgba(0,0,0,0.38) 0 1px,transparent 1px 3px);
-  pointer-events:none;
-}
-.led-text {
-  font-family:"Courier New",Courier,monospace; font-weight:bold;
-  font-size:27px; letter-spacing:6px; line-height:1.6; display:inline-block;
-  color:#ff4433;
-  text-shadow:0 0 6px rgba(255,70,45,0.95), 0 0 18px rgba(255,70,45,0.55), 0 0 36px rgba(255,70,45,0.3);
-  transform:scaleY(1.3);
-  animation:ledblink 1.3s steps(1) infinite;
-}
-@keyframes ledblink { 0%,100% { opacity:1; } 50% { opacity:0.05; } }
+.soon-canvas { image-rendering:pixelated; image-rendering:crisp-edges; max-width:100%; }
 
 /* REGISTAR NOTIFICATION FORM */
-.registar-box { border:2px solid #8b0000; background-color:#fffaf8; margin:14px 0; }
+.registar-box { border:1px solid #00006a; background-color:#fbfcff; margin:14px 0; }
 .registar-title {
-  background-color:#8b0000; color:#ffffff;
+  background-color:#00006a; color:#ffffff;
   font-family:Arial,Helvetica,sans-serif; font-size:11px; font-weight:bold;
   letter-spacing:2px; padding:4px 8px;
 }
@@ -1105,16 +1091,15 @@ a:visited { color:#551A8B; }
         <div id="restricted-registry">
           <div style="position:relative;">
             <div class="restricted-banner">&#9888;&nbsp; RESTRICTED &mdash; BUREAU ARTICLE INVENTORY / DIRECTIVE 14-C / FORM 7-UR (RESTRICTED) &nbsp;&#9888;</div>
-            <div class="restricted-stamp">UNREGISTERED</div>
           </div>
-          <div class="notice-box alert">
-            <strong>AUTHORISED ACCESS ONLY [DIRECTIVE 9-C / FORM 7-UR RESTRICTED]:</strong> Items listed herein are unregistered articles under provisional classification review. Their inclusion does not constitute registration, approval, endorsement, or commercial authorisation of any kind. All items carry UNREGISTERED status. Unauthorised reproduction prohibited.
+          <div class="notice-box">
+            <strong>NOTICE:</strong> Items listed herein are unregistered articles under provisional classification review. All items carry UNREGISTERED status.
           </div>
           <h1 style="color:#8b0000;border-bottom-color:#8b0000;">RESTRICTED ARTICLE INVENTORY<br><span style="font-size:11px;color:#555555;font-weight:normal;">Reference: BUR/INV/1998/14-C &mdash; As at 14 NOV 1998</span></h1>
 
           <!-- INVENTORY WITHHELD — AVAILABLE SOON -->
-          <div class="led-panel">
-            <span class="led-text">PRODUCTS&nbsp;AVAILABLE&nbsp;SOON</span>
+          <div class="soon-panel">
+            <canvas class="soon-canvas" width="560" height="56"></canvas>
           </div>
 
           <div class="registar-box">
@@ -1212,6 +1197,7 @@ function showPage(id) {
   }
   if (id === 'page-records-request' && typeof gameReInit === 'function') setTimeout(gameReInit, 0);
   if (id === 'page-home' && typeof homeStarInit === 'function') setTimeout(homeStarInit, 0);
+  if (id === 'restricted' && typeof soonInit === 'function') setTimeout(soonInit, 0);
   window.scrollTo(0, 0);
 }
 
@@ -1696,14 +1682,13 @@ jaContent['page-detail-ur-t01'] = `<div class="page-header-bar" style="backgroun
 
 jaContent['restricted'] = `<div style="position:relative;">
 <div class="restricted-banner">&#9888;&nbsp; 制限付き — 局物品在庫 / 指令14-C / 書式7-UR（制限付き） &nbsp;&#9888;</div>
-<div class="restricted-stamp">未登録</div>
 </div>
-<div class="notice-box alert">
-<strong>認可者のみアクセス可 [指令9-C / 書式7-UR 制限付き]：</strong>本リストの物品は分類審査中の未登録品。掲載は登録・承認・推薦・商業認可を構成しない。すべて未登録。無断複製禁止。
+<div class="notice-box">
+<strong>通知：</strong>本リストの物品は分類審査中の未登録品であり、すべて未登録の状態にある。
 </div>
 <h1 style="color:#8b0000;border-bottom-color:#8b0000;">制限付き物品在庫<br><span style="font-size:11px;color:#555555;font-weight:normal;">参照: BUR/INV/1998/14-C — 1998年11月14日現在</span></h1>
-<div class="led-panel">
-<span class="led-text">PRODUCTS&nbsp;AVAILABLE&nbsp;SOON</span>
+<div class="soon-panel">
+<canvas class="soon-canvas" width="560" height="56"></canvas>
 </div>
 <div class="registar-box">
 <div class="registar-title">書式7-UR/N — 関心の登記（通知リスト）</div>
@@ -1755,11 +1740,66 @@ function setLang(lang) {
     if (recPage && recPage.style.display === 'block') setTimeout(gameReInit, 10);
   }
   if (typeof homeStarInit === 'function') setTimeout(homeStarInit, 10);
+  if (typeof soonInit === 'function') setTimeout(soonInit, 10);
 }
 
 function toggleLang() {
   setLang(currentLang === 'en' ? 'ja' : 'en');
 }
+
+// "PRODUCTS AVAILABLE SOON" — chunky pixel letters, Mario palette,
+// gentle stepped bounce. Re-run after innerHTML swaps (lang toggle).
+var SOON_FONT = {
+  A:["01110","10001","10001","11111","10001","10001","10001"],
+  B:["11110","10001","10001","11110","10001","10001","11110"],
+  C:["01110","10001","10000","10000","10000","10001","01110"],
+  D:["11110","10001","10001","10001","10001","10001","11110"],
+  E:["11111","10000","10000","11110","10000","10000","11111"],
+  I:["11111","00100","00100","00100","00100","00100","11111"],
+  L:["10000","10000","10000","10000","10000","10000","11111"],
+  N:["10001","11001","10101","10011","10001","10001","10001"],
+  O:["01110","10001","10001","10001","10001","10001","01110"],
+  P:["11110","10001","10001","11110","10000","10000","10000"],
+  R:["11110","10001","10001","11110","10100","10010","10001"],
+  S:["01111","10000","10000","01110","00001","00001","11110"],
+  T:["11111","00100","00100","00100","00100","00100","00100"],
+  U:["10001","10001","10001","10001","10001","10001","01110"],
+  V:["10001","10001","10001","10001","10001","01010","00100"]
+};
+var _soonCv = null, _soonPhase = 0, _soonTimer = null;
+function soonDraw() {
+  var cv = _soonCv;
+  if (!cv || !cv.isConnected) return;
+  var ctx = cv.getContext('2d');
+  var text = 'PRODUCTS AVAILABLE SOON';
+  var COLS = ['#e52521','#fbd000','#43b047','#049cd8'];
+  var B = 4, gw = 6;
+  var totalW = (text.length * gw - 1) * B;
+  var x0 = Math.floor((cv.width - totalW) / 2);
+  ctx.clearRect(0, 0, cv.width, cv.height);
+  var ci = 0;
+  for (var i = 0; i < text.length; i++) {
+    var g = SOON_FONT[text.charAt(i)];
+    if (!g) { continue; }
+    var col = COLS[ci++ % COLS.length];
+    var dy = Math.round(Math.sin(_soonPhase * 0.55 + i * 0.55));
+    var ox = x0 + i * gw * B, oy = 8 + (dy + 1) * B;
+    var r, c;
+    for (r = 0; r < 7; r++) for (c = 0; c < 5; c++) if (g[r].charAt(c) === '1') {
+      ctx.fillStyle = '#1a315f'; ctx.fillRect(ox + c*B + B, oy + r*B + B, B, B);
+    }
+    for (r = 0; r < 7; r++) for (c = 0; c < 5; c++) if (g[r].charAt(c) === '1') {
+      ctx.fillStyle = col; ctx.fillRect(ox + c*B, oy + r*B, B, B);
+    }
+  }
+}
+function soonInit() {
+  _soonCv = document.querySelector('.soon-canvas');
+  if (!_soonCv) return;
+  if (!_soonTimer) _soonTimer = setInterval(function(){ _soonPhase++; soonDraw(); }, 140);
+  soonDraw();
+}
+soonInit();
 
 // Home star: threshold the logo into true 40x40 pixel blocks on a canvas.
 // Re-run after any innerHTML swap that recreates the canvas (lang toggle).
