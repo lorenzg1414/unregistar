@@ -52,7 +52,7 @@
 <body>
   <div class="sheet">
     <div class="tape"></div>
-    <canvas class="logo" width="44" height="44" style="display:block;margin:0 auto 8px;"></canvas>
+    <canvas class="logo" width="176" height="176" style="display:block;margin:0 auto 8px;width:44px;height:44px;"></canvas>
     <h1>IDEA <span>DOC</span></h1>
     <div class="sub">FORM P-09 &mdash; IDEA DEPOSIT DOCUMENT</div>
     <div class="hint">One page. Dump them all here so they <em>stop haunting you at 2 a.m.</em> Quality is not a requirement. Writing it down is.</div>
@@ -74,7 +74,7 @@
   var c=document.querySelector('canvas.logo'), x=c.getContext('2d');
   var img=new Image();
   img.onload=function(){
-    var N=96, o=document.createElement('canvas'); o.width=N; o.height=N;
+    var N=256, o=document.createElement('canvas'); o.width=N; o.height=N;
     var g=o.getContext('2d'); g.drawImage(img,0,0,N,N);
     var id=g.getImageData(0,0,N,N), d=id.data;
     var R=0x19,G=0x19,B=0x19;
@@ -86,7 +86,7 @@
     x.imageSmoothingEnabled=true; x.imageSmoothingQuality='high';
     x.drawImage(o,0,0,c.width,c.height);
   };
-  img.src='../assets/star-96.png';
+  img.src='../assets/star-256.png';
 })();
 </script>
 </body>

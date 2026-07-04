@@ -76,7 +76,7 @@
   <div class="sheet">
     <div class="band">
       <span class="mark">LUCKY OUTFIT TRACKER</span>
-      <canvas class="logo" width="36" height="36"></canvas>
+      <canvas class="logo" width="144" height="144" style="width:36px;height:36px;"></canvas>
     </div>
     <div class="inner">
       <div class="modelline">
@@ -174,7 +174,7 @@
   var c=document.querySelector('canvas.logo'), x=c.getContext('2d');
   var img=new Image();
   img.onload=function(){
-    var N=96, o=document.createElement('canvas'); o.width=N; o.height=N;
+    var N=256, o=document.createElement('canvas'); o.width=N; o.height=N;
     var g=o.getContext('2d'); g.drawImage(img,0,0,N,N);
     var id=g.getImageData(0,0,N,N), d=id.data;
     for(var i=0;i<d.length;i+=4){
@@ -185,7 +185,7 @@
     x.imageSmoothingEnabled=true; x.imageSmoothingQuality='high';
     x.drawImage(o,0,0,c.width,c.height);
   };
-  img.src='../assets/star-96.png';
+  img.src='../assets/star-256.png';
 })();
 </script>
 </body>

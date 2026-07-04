@@ -40,7 +40,7 @@
 </head>
 <body>
   <div class="sheet">
-    <canvas class="logo" width="40" height="40" style="display:block;margin:0 0 18px;"></canvas>
+    <canvas class="logo" width="160" height="160" style="display:block;margin:0 0 18px;width:40px;height:40px;"></canvas>
     <h1>Color Energy Guide</h1>
     <div class="sub">FORM P-06 &mdash; CHROMATIC ENERGY DIRECTIVE</div>
     <div class="hint">What each color does, according to studies the Bureau has not personally re-run. Deploy accordingly.</div>
@@ -88,7 +88,7 @@
   var c=document.querySelector('canvas.logo'), x=c.getContext('2d');
   var img=new Image();
   img.onload=function(){
-    var N=96, o=document.createElement('canvas'); o.width=N; o.height=N;
+    var N=256, o=document.createElement('canvas'); o.width=N; o.height=N;
     var g=o.getContext('2d'); g.drawImage(img,0,0,N,N);
     var id=g.getImageData(0,0,N,N), d=id.data;
     var R=0x15,G=0x15,B=0x15;
@@ -100,7 +100,7 @@
     x.imageSmoothingEnabled=true; x.imageSmoothingQuality='high';
     x.drawImage(o,0,0,c.width,c.height);
   };
-  img.src='../assets/star-96.png';
+  img.src='../assets/star-256.png';
 })();
 </script>
 </body>
