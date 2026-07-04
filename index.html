@@ -254,6 +254,14 @@ a:visited { color:#551A8B; }
   padding:2px 12px; letter-spacing:4px; transform:rotate(-12deg);
   position:absolute; right:20px; top:8px;
 }
+/* HOME — spinning pixel star */
+.home-star {
+  width:192px; height:192px;
+  image-rendering:pixelated; image-rendering:crisp-edges;
+  animation:starSpin 8s steps(32) infinite;
+}
+@keyframes starSpin { to { transform:rotate(360deg); } }
+
 /* LED "AVAILABLE SOON" PANEL */
 .led-panel {
   background-color:#0a0a0a; border:3px inset #777777;
@@ -517,33 +525,11 @@ a:visited { color:#551A8B; }
              HOME
              ================================================ -->
         <div class="page-section" id="page-home">
-          <div class="notice-box info">
-            <strong>NOTICE [REF: BUR/1998/11/14-A]:</strong>
-            This portal is maintained by the Bureau of Unregistered Articles &amp; Regulatory Standards. For assistance, refer to Form 7-UR (General Inquiry). Do not submit registration requests through this interface. The <span class="redacted">&#9608;&#9608;&#9608;&#9608;</span> Registry was last updated 14 November 1998. See footnote 4 below.
+          <div style="text-align:center;padding:56px 10px 64px;">
+            <img src="assets/star-96.png" alt="UNREGISTAR star" class="home-star">
+            <h1 style="border-bottom:none;font-size:28px;letter-spacing:3px;margin:36px 0 14px;">WELCOME TO UNREGISTAR</h1>
+            <p style="font-size:14px;color:#444444;text-align:center;">The Bureau is glad you exist.</p>
           </div>
-          <h1>Bureau of Unregistered Articles &amp; Regulatory Standards</h1>
-          <p>Welcome to the official public information portal of the <strong>Bureau of Unregistered Articles &amp; Regulatory Standards</strong> (hereinafter &ldquo;the Bureau&rdquo;), an administrative body operating under the authority of the Ministry of Regulatory Compliance pursuant to Ordinance No. 14 of 1993 and subsequent amendments. This portal provides access to public-facing Bureau resources including general inquiry forms, notice publications, procedural guidance documents, and applicable regulatory frameworks.</p>
-          <p>Members of the public seeking to initiate a registration inquiry in respect of an unregistered article should complete Form 7-UR (General), available through the Forms &amp; Applications section. Submissions must be accompanied by Form 3-CR (Classification Request) where the article has not been previously classified under the Standard Classification Index (SCI), Revision 4.1. Incomplete submissions will be returned without notice.</p>
-          <h2>Current Bureau Notices</h2>
-          <table class="data-table" cellpadding="0" cellspacing="0">
-            <tr><th>Notice Ref.</th><th>Date</th><th>Subject</th><th>Status</th></tr>
-            <tr><td>BUR/1998/11/A</td><td nowrap>14 NOV 1998</td><td>Scheduled Portal Maintenance &mdash; 18 NOV 1998 02:00&ndash;06:00 JST</td><td class="status-active">ACTIVE</td></tr>
-            <tr><td>BUR/1998/10/F</td><td nowrap>31 OCT 1998</td><td>Revision to Form 7-UR: Sections 3&ndash;7 Updated. Prior versions no longer accepted.</td><td class="status-active">ACTIVE</td></tr>
-            <tr><td>BUR/1998/10/C</td><td nowrap>14 OCT 1998</td><td>Classification Directive 14-C: Apparel &amp; Accessory Articles &mdash; Review Pending</td><td class="status-pending">UNDER REVIEW</td></tr>
-            <tr><td>BUR/1998/09/B</td><td nowrap>03 SEP 1998</td><td>Bureau Address Change &mdash; Minami-Aoyama Office. Old Shinjuku address no longer valid.</td><td class="status-archived">ARCHIVED</td></tr>
-            <tr><td>BUR/1998/07/A</td><td nowrap>22 JUL 1998</td><td>Annual Classification Review: SCI Revision 4.1 Formally Adopted.</td><td class="status-archived">ARCHIVED</td></tr>
-            <tr><td>BUR/1997/12/D</td><td nowrap>19 DEC 1997</td><td>Directive 9-C Issued: Access Restriction Framework for Provisional Inventory Sections</td><td class="status-archived">ARCHIVED</td></tr>
-          </table>
-          <h2>Registration Procedures &mdash; Summary</h2>
-          <p>All articles subject to Bureau jurisdiction, as defined under Classification Directive 14-C, are required to be registered prior to public distribution, transfer, or display. Unregistered articles identified within the Bureau&rsquo;s operational jurisdiction are subject to provisional inventory listing pending classification review. Parties in possession of unregistered articles are advised to file at the earliest practicable opportunity.</p>
-          <div class="notice-box alert">
-            <strong>IMPORTANT &mdash; DO NOT DISTRIBUTE:</strong> Access to Restricted Article Inventory sections is limited to authorised personnel holding valid Bureau credentials under Directive 9-C. <strong>DO NOT</strong> navigate to restricted subsections without authorisation. <strong>DO NOT</strong> share restricted inventory listings. <strong>DO NOT</strong>, under any circumstances, attempt to obtain items listed in restricted registries through unofficial channels. Failure to comply may result in <span class="redacted">&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;</span> pursuant to applicable law.
-          </div>
-          <p class="small-grey" style="border-top:1px solid #dddddd;padding-top:8px;line-height:1.6;">
-            <sup>*</sup> Bureau inventory contains <strong>seven (7)</strong> articles under provisional registration, all pending classification. One (1) section is subject to access restriction under Directive 9-C. See footnote 4.<br>
-            <sup>**</sup> Footnote 4: Refer to subsection 7 of Form 7-UR (Restricted) for access eligibility. <span class="redacted">&#9608;&#9608;&#9608;&#9608; &#9608;&#9608;&#9608;&#9608;&#9608;</span><br>
-            <sup>***</sup> Total item count may differ from figures in Annual Report (FY1997) due to reclassification of items UR-T01 through UR-T03 pending resolution of Directive 14-C.
-          </p>
         </div>
         <!-- /page-home -->
 
@@ -1296,32 +1282,11 @@ var LABELS = {
 
 var jaContent = {};
 
-jaContent['page-home'] = `<div class="notice-box info">
-<strong>通知 [参照: BUR/1998/11/14-A]：</strong>本ポータルはUNREGISTAR未登録物品・規制基準局が管理している。お問い合わせは書式7-UR（一般問い合わせ）を参照されたい。本インターフェースを通じた登録申請は受け付けていない。<span class="redacted">&#9608;&#9608;&#9608;&#9608;</span>登録簿の最終更新日：1998年11月14日。脚注4を参照。
-</div>
-<h1>未登録物品・規制基準局</h1>
-<p>ようこそ。<strong>未登録物品・規制基準局</strong>（以下「当局」という）の公式情報ポータルへ。当局は1993年政令第14号およびその後の改正に基づき、規制遵守省の権限のもとで運営される行政機関である。本ポータルでは、一般問い合わせ書式、通知公示、手続き案内文書、および適用される規制枠組みへのアクセスを提供する。</p>
-<p>未登録物品に関する登録問い合わせを開始しようとする一般市民は、書式・申請セクションから入手可能な書式7-UR（一般）に記入されたい。物品が標準分類索引（SCI）改訂4.1版のいずれの現行サブコードにも分類されていない場合は、書式3-CR（分類申請）を添付すること。不備のある申請は通知なしに返送される。</p>
-<h2>当局現行通知</h2>
-<table class="data-table" cellpadding="0" cellspacing="0">
-<tr><th>通知参照番号</th><th>日付</th><th>件名</th><th>状態</th></tr>
-<tr><td>BUR/1998/11/A</td><td nowrap>1998年11月14日</td><td>ポータル定期メンテナンス — 1998年11月18日 02:00〜06:00 JST</td><td class="status-active">有効</td></tr>
-<tr><td>BUR/1998/10/F</td><td nowrap>1998年10月31日</td><td>書式7-UR改訂：第3〜7節更新。旧版は受付不可。</td><td class="status-active">有効</td></tr>
-<tr><td>BUR/1998/10/C</td><td nowrap>1998年10月14日</td><td>分類指令14-C：衣料品・アクセサリー — 審査中</td><td class="status-pending">審査中</td></tr>
-<tr><td>BUR/1998/09/B</td><td nowrap>1998年9月3日</td><td>局所在地変更 — 南青山事務所。旧新宿住所は無効。</td><td class="status-archived">保管</td></tr>
-<tr><td>BUR/1998/07/A</td><td nowrap>1998年7月22日</td><td>年次分類審査：SCI改訂4.1版正式採択。</td><td class="status-archived">保管</td></tr>
-<tr><td>BUR/1997/12/D</td><td nowrap>1997年12月19日</td><td>指令9-C発行：暫定在庫区域のアクセス制限枠組み</td><td class="status-archived">保管</td></tr>
-</table>
-<h2>登録手続き — 概要</h2>
-<p>分類指令14-Cに基づき当局の管轄に属するすべての物品は、公開配布、譲渡、または展示に先立ち登録が義務付けられている。当局の管轄区域内で確認された未登録物品は、分類審査が完了するまで暫定在庫リストに掲載される。未登録物品を所持する当事者は、実行可能な限り早急に申請することが求められる。</p>
-<div class="notice-box alert">
-<strong>重要 — 配布禁止：</strong>制限付き物品在庫セクションへのアクセスは、指令9-Cに基づく有効な局認証情報を保有する認可担当者のみに限定されている。<strong>禁止事項：</strong>認可なしに制限サブセクションへのアクセスを試みること。制限付き在庫リストを共有すること。いかなる状況においても、非公式な経路により制限登録簿に掲載された物品の入手を試みること。違反した場合、適用法令に基づき<span class="redacted">&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;</span>となる可能性がある。
-</div>
-<p class="small-grey" style="border-top:1px solid #dddddd;padding-top:8px;line-height:1.6;">
-<sup>*</sup> 当局在庫には暫定登録中の物品が<strong>7（七）</strong>点あり、すべて分類待ちである。1つのセクションは指令9-Cに基づきアクセス制限中。脚注4参照。<br>
-<sup>**</sup> 脚注4：書式7-UR（制限付き）第7節を参照のこと。<span class="redacted">&#9608;&#9608;&#9608;&#9608; &#9608;&#9608;&#9608;&#9608;&#9608;</span><br>
-<sup>***</sup> 物品の合計数は、指令14-Cに基づくUR-T01〜UR-T03の再分類により、年次報告書（FY1997）の数値と異なる場合がある。
-</p>`;
+jaContent['page-home'] = `<div style="text-align:center;padding:56px 10px 64px;">
+<img src="assets/star-96.png" alt="UNREGISTAR star" class="home-star">
+<h1 style="border-bottom:none;font-size:28px;letter-spacing:3px;margin:36px 0 14px;">UNREGISTARへようこそ</h1>
+<p style="font-size:14px;color:#444444;text-align:center;">局はあなたの存在を喜んでいる。</p>
+</div>`;
 
 jaContent['page-about'] = `<div class="page-header-bar">
 <span class="page-type-badge">局声明</span> &nbsp; BUR/STMT/1998/01
