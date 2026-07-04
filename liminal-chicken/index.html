@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>after hours</title>
+<!--
+  ============================================================
+  A liminal point-and-click. Single file, no build step.
+
+  WHERE TO EDIT THINGS:
+    - PALETTES ....... colors per scene, near the top of the script
+    - ITEMS .......... item names + pixel icons
+    - COMBOS ......... item-combination recipes
+    - AREAS .......... the whole dependency graph: every hotspot,
+                       every exit, every lock/key/flag lives here.
+                       Add an area = add an entry here + a draw
+                       function in SCENES with the same key.
+    - SCENES ......... procedural pixel-art draw function per area
+    - FLAVOR ......... idle click flavor text per area
+
+  Save data goes to localStorage when available, otherwise an
+  in-memory fallback (works as a claude.ai artifact too).
+  ============================================================
+-->
+<style>
+  :root{ --fg:#b8bcb0; --dim:#5c6058; --bg:#0b0c0a; --hl:#9fd8d2; }
+  *{ box-sizing:border-box; margin:0; padding:0; }
+  html,body{ background:var(--bg); color:var(--fg); height:100%; }
+  body{ font-family:"Courier New",ui-monospace,monospace; display:flex; align-items:center; justify-content:center; padding:8px; }
+  #wrap{ width:min(96vw, 860px); user-select:none; -webkit-user-select:none; }
+  #frame{ position:relative; border:1px solid #23251f; background:#000; }
+  canvas#cv{ display:block; width:100%; aspect-ratio:320/200;
+    image-rendering:pixelated; image-rendering:crisp-edges; touch-action:manipulation; cursor:crosshair; }
+  canvas#cv.hot{ cursor:pointer; }
+  #corner{ position:absolute; top:6px; right:6px; display:flex; gap:6px; opacity:.55; }
+  #corner button{ background:#111310; color:var(--dim); border:1px solid #23251f;
+    font:inherit; font-size:11px; padding:2px 7px; cursor:pointer; }
+  #corner button:hover{ color:var(--fg); }
+  #hint{ min-height:15px; font-size:11px; color:var(--dim); padding:4px 2px 0; letter-spacing:.5px; }
+  #msg{ min-height:38px; font-size:13px; line-height:1.45; padding:2px 2px 6px; color:var(--fg); }
+  #msg.soft{ color:var(--dim); font-style:italic; }
+  #inv{ display:flex; gap:6px; flex-wrap:wrap; padding:6px 0 2px; border-top:1px solid #1a1c17; min-height:46px; }
+  .slot{ width:38px; height:38px; background:#101208; background:#0f110d; border:1px solid #23251f;
+    display:flex; align-items:center; justify-content:center; cursor:pointer; position:relative; }
+  .slot canvas{ width:30px; height:30px; image-rendering:pixelated; }
+  .slot.sel{ border-color:var(--hl); box-shadow:0 0 0 1px var(--hl); }
+  .slot:hover::after{ content:attr(data-name); position:absolute; bottom:calc(100% + 4px); left:0;
+    background:#0b0c0a; border:1px solid #23251f; color:var(--fg); font-size:10px; padding:2px 5px; white-space:nowrap; z-index:3; }
+  #end{ position:absolute; inset:0; display:none; align-items:center; justify-content:flex-start;
+    flex-direction:column; text-align:center; background:transparent; padding:4% 0 2%; }
+  #end.show{ display:flex; }
+  #end h1{ font-size:clamp(16px,3.4vw,26px); font-weight:normal; letter-spacing:2px; color:#e8e4da;
+    text-shadow:0 0 12px rgba(230,220,180,.25); }
+  #end .credits{ margin-top:auto; font-size:clamp(8px,1.4vw,11px); color:var(--dim); line-height:1.7; }
+  #end button{ margin-top:8px; background:none; border:1px solid #3a3d35; color:var(--dim);
+    font:inherit; font-size:11px; padding:4px 12px; cursor:pointer; }
+  #end button:hover{ color:var(--fg); }
+</style>
+</head>
+<body>
+<div id="wrap">
+  <div id="frame">
+    <canvas id="cv" width="320" height="200"></canvas>
+    <div id="corner">
+      <button id="sndBtn" title="ambient sound">&#9834; off</button>
+      <button id="rstBtn" title="start over">reset</button>
+    </div>
+    <div id="end">
+      <h1>You found the chicken.</h1>
+      <div class="credits">
+        &mdash; after hours &mdash;<br><br>
+        the chicken &nbsp;........ &nbsp;itself<br>
+        the building &nbsp;....... &nbsp;still there<br>
+        the field &nbsp;.......... &nbsp;still waiting<br>
+        you &nbsp;................ &nbsp;you<br>
+      </div>
+      <button id="againBtn">begin again</button>
+    </div>
+  </div>
+  <div id="hint">&nbsp;</div>
+  <div id="msg" class="soft">The lights are on. Nobody said anything about it.</div>
+  <div id="inv"></div>
+</div>
+
+<script>
+"use strict";
+/* ================= storage (localStorage w/ in-memory fallback) ========= */
+const store=(()=>{try{localStorage.setItem("__t","1");localStorage.removeItem("__t");return localStorage;}
+catch(e){const m={};return{getItem:k=>(k in m?m[k]:null),setItem:(k,v)=>{m[k]=String(v);},removeItem:k=>{delete m[k];}};}})();
+const SAVE_KEY="afterhours_save_v1";
+
+/* ================= palettes ============================================= */
+/* Edit freely. Hex strings; converted to ints at boot. */
+const PALETTES={
+  /* CGA-flavored office: black / brown / orange / cyan / grey */
+  cga:{ BK:"#0a0a0a", DK:"#241c14", BR:"#6e4420", OR:"#c47830", CY:"#6fd4cf", DC:"#2f5f5c", GY:"#8a8a84", DG:"#3a3a36", WH:"#e8e4da" },
+  /* greyer office floors */
+  grey:{ BK:"#101012", DG:"#2b2d30", GY:"#63676c", LG:"#989ea3", CY:"#79c6c9", WH:"#dfe3e6", TN:"#8a7a5e", DK:"#1a1b1d" },
+  /* muted GBC-meets-VGA nature */
+  nature:{ SK1:"#93a7b2", SK2:"#5b6c7e", OL:"#5c6b3f", DO:"#39452c", GL:"#75844f", WG:"#8b8577", DKG:"#20261c", WH:"#d9d9cc", BK:"#11140f" },
+  /* roadside dusk */
+  dusk:{ S1:"#c98a4e", S2:"#8a5f5a", S3:"#544663", RD:"#45454c", DR:"#232028", GS:"#4c503a", DG2:"#2b2f22", SN:"#7a8288", YL:"#e6c46a", WH:"#e3ded2", BK:"#141218" },
+  dark:{ BK:"#050505", ST:"#6e5f34", DS:"#38321e", WM:"#8d825e", CY:"#6fd4cf", WH:"#e8e4da", RD:"#b5493a", OR:"#c47830", DG:"#2a2822" }
+};
+
+/* ================= items ================================================ */
+const ITEMS={
+  crowbar:  {name:"crowbar"},
+  feather:  {name:"white feather"},
+  string:   {name:"twine"},
+  magnet:   {name:"barn magnet"},
+  battery:  {name:"D-cell battery"},
+  flashlight:{name:"flashlight (dead)"},
+  flashlit: {name:"flashlight"},
+  opener:   {name:"can opener"},
+  coin:     {name:"coin"},
+  corncan:  {name:"GOLDEN KERNELS"},
+  corn:     {name:"opened kernels"},
+  tool:     {name:"magnet on twine"},
+  stoneegg: {name:"stone egg"},
+  brasskey: {name:"small brass key"}
+};
+/* 12x12 icons; chars map to ICOLORS */
+const ICOLORS={ ".":null, k:"#111", g:"#8a8a84", d:"#4a4a46", w:"#e8e4da", o:"#c47830", y:"#e6c46a", c:"#6fd4cf", r:"#b5493a", b:"#6e4420", t:"#8a7a5e", n:"#39452c" };
+const ICONS={
+  crowbar:["............","..........dd",".........dgd","........dgd.",".......dgd..","......dgd...",".....dgd....","....dgd.....","...dgd......","..dgd.......",".dgg........",".dd........."],
+  feather:["............","........w...",".......ww...","......www...",".....www....","....www.....","...www......","..www.......",".ww.........",".w..........","............","............"],
+  string: ["............","...tttt.....","..t....t....","..t....t....","...tttt.....","..t....t....","..t....t....","...tttt.....","....t.......","....t.......","............","............"],
+  magnet: ["............","...rrrr.....","..rrrrrr....","..rr..rr....","..rr..rr....","..rr..rr....","..ww..ww....","..ww..ww....","............","............","............","............"],
+  battery:["............","....gg......","...gggg.....","...g..g.....","...gyyg.....","...gyyg.....","...g..g.....","...gggg.....","...gggg.....","...gggg.....","............","............"],
+  flashlight:["............","..dd........","..dgdd......","..dggddd....","..dggggddd..","..dggggddd..","..dggddd....","..dgdd......","..dd........","............","............","............"],
+  flashlit:["............","..dd....y...","..dgdd...y..","..dggddd..y.","..dggggdddyy","..dggggdddyy","..dggddd..y.","..dgdd...y..","..dd....y...","............","............","............"],
+  opener: ["............","....g.......","...ggg......","...g.g......","....g.......","....g.......","....gg......","....gg......","....g.......","............","............","............"],
+  coin:   ["............","............","....yyy.....","...y...y....","..y..y..y...","..y..y..y...","..y..y..y...","...y...y....","....yyy.....","............","............","............"],
+  corncan:["............","...gggg.....","..gggggg....","..gyyyyg....","..gyooyg....","..gyyyyg....","..gggggg....","..gggggg....","..gggggg....","............","............","............"],
+  corn:   ["............","...g..g.....","..gggggg....","..gyyyyg....","..gyyyyg....","..gyyyyg....","..gyyyyg....","..gggggg....","...y..y.....","..y..y..y...","............","............"],
+  tool:   ["....t.......","....t.......","....t.......","....t.......","....t.......","...rrrr.....","..rrrrrr....","..rr..rr....","..rr..rr....","..ww..ww....","............","............"],
+  stoneegg:["............","............","....gg......","...gggg.....","..gggggg....","..gggggg....","..gdgggg....","..gggggg....","...gggg.....","....gg......","............","............"],
+  brasskey:["............","............","..yyy.......","..y.y.......","..yyy.......","...y........","...y........","...yy.......","...y........","...yy.......","............","............"]
+};
+/* item combination recipes: [a, b, result, message] */
+const COMBOS=[
+  ["flashlight","battery","flashlit","The battery slots in with a satisfying weight. Warm yellow light."],
+  ["magnet","string","tool","You knot the twine through the little barn. A fishing rig for metal things."],
+  ["corncan","opener","corn","The lid peels back. Golden kernels, still smelling faintly of summer."]
+];
+
+/* ================= state ================================================ */
+const DEFAULT_STATE=()=>({ area:"hallway", inv:[], sel:null, f:{}, won:false });
+let S=DEFAULT_STATE();
+function save(){ try{ store.setItem(SAVE_KEY, JSON.stringify({area:S.area,inv:S.inv,f:S.f,won:S.won})); }catch(e){} }
+function load(){ try{ const d=JSON.parse(store.getItem(SAVE_KEY)||"null");
+  if(d && AREAS[d.area]){ S.area=d.area; S.inv=(d.inv||[]).filter(i=>ITEMS[i]); S.f=d.f||{}; S.won=!!d.won; } }catch(e){} }
+
+const has=i=>S.inv.includes(i);
+const F=k=>!!S.f[k];
+
+/* ================= tiny helper API passed to hotspot handlers =========== */
+const WRONG=["Nothing happens.","That doesn't want to.","No.","It politely declines.","Not like that."];
+const A={
+  say(t,soft){ const m=document.getElementById("msg"); m.textContent=t; m.className=soft?"soft":""; },
+  give(id,t){ if(!has(id)) S.inv.push(id); if(t)A.say(t); S.sel=null; renderInv(); save(); dirty=true; },
+  take(id){ const i=S.inv.indexOf(id); if(i>=0)S.inv.splice(i,1); if(S.sel===id)S.sel=null; renderInv(); save(); },
+  set(k,v){ S.f[k]=(v===undefined?true:v); save(); dirty=true; },
+  go(area,t){ S.area=area; S.sel=null; S.f["seen_"+area]=true; if(t)A.say(t,true); save(); dirty=true; setAmbience(); },
+  wrong(){ A.say(WRONG[Math.floor(Math.random()*WRONG.length)],true); },
+  win(){ S.won=true; save(); dirty=true; document.getElementById("end").classList.add("show"); setAmbience(); }
+};
+
+/* ================= AREAS: the dependency graph ==========================
+   Each hotspot: r:[x,y,w,h] in 320x200 space,
+   label (hover hint), vis() optional visibility,
+   tap() for a bare click, use:{itemId:fn} for using inventory items.     */
+const AREAS={
+
+hallway:{ hotspots:[
+  { r:[0,60,26,110], label:"west, toward the stairs", tap:()=>A.go("stairwell","A stairwell. The air is cooler here.") },
+  { r:[294,60,26,110], label:"east, a doorway", tap:()=>A.go("breakroom","A break room. The chairs are all pushed in.") },
+  { r:[128,64,46,86], label:"a door with wired glass", tap:()=>A.go("cubicles","Cubicles. Rows and rows. All empty.") },
+  { r:[212,66,40,84], label:"a door, painted over",
+    tap:()=>{ if(F("shortcut")) A.go("field","The painted door swings out onto grass. The hallway hums behind you.");
+      else A.say("A door painted the same color as the wall, painted shut. A cold draft under it &mdash; it smells like rain.".replace("&mdash;","—")); },
+    use:{ crowbar:()=>A.say("It flexes but won't pry. It has been opened before — from the other side."),
+          brasskey:()=>A.say("No keyhole. Just paint.") } },
+  { r:[62,72,18,24], label:"a notice", tap:()=>A.say("Sun-bleached notice: \"ALL STAFF — report sightings to Facilities.\" Sightings of what?") }
+]},
+
+breakroom:{ hotspots:[
+  { r:[0,60,22,110], label:"back to the hallway", tap:()=>A.go("hallway","The hallway again. It goes on a little too long.") },
+  { r:[100,54,56,50], label:"a window", tap:()=>A.say("A field, a water tower, dusk. You are on the third floor. There is no third floor on that side.",true) },
+  { r:[58,94,10,10], label:"something on the fridge", vis:()=>!F("magnetTaken"),
+    tap:()=>{ A.set("magnetTaken"); A.give("magnet","A little magnet shaped like a barn. It comes off the fridge with a tick."); } },
+  { r:[22,72,50,88], label:"a fridge", tap:()=>A.say(F("magnetTaken")?"The fridge is dead and empty. A clean rectangle where the magnet was.":"A dead fridge. A tiny barn-shaped magnet clings to the door like it's waiting.") },
+  { r:[146,110,20,10], label:"a napkin on the table", tap:()=>A.say("Scrawled on a napkin: \"it only sings when the building wakes.\"") },
+  { r:[152,154,38,22], label:"a floor vent",
+    tap:()=>{ if(!F("ventOpen")) A.say("A floor-level vent, grille bowed outward. Through the slits: a round shape.");
+      else if(!F("batteryTaken")){ A.set("batteryTaken"); A.give("battery","Inside: dust, a dead moth, and one fat D-cell battery."); }
+      else A.say("Just dust and the dead moth now.",true); },
+    use:{ crowbar:()=>{ if(F("ventOpen")) A.wrong(); else { A.set("ventOpen"); A.say("The grille pops off with a bang that echoes too far."); } } } },
+  { r:[238,50,58,110], label:"a vending machine",
+    tap:()=>{ if(!F("power")) A.say("A dark vending machine. Row C: GOLDEN KERNELS — 1 coin. The building is asleep.");
+      else if(!F("cornBought")) A.say("It hums now. Row C: GOLDEN KERNELS. The coin slot glows faintly.");
+      else A.say("Row C is empty. The machine hums to itself.",true); },
+    use:{ coin:()=>{ if(!F("power")) A.say("The coin slot is dark. Dead. The whole machine is asleep.");
+        else if(F("cornBought")) A.wrong();
+        else { A.take("coin"); A.set("cornBought"); A.give("corncan","Clunk. A dented can: GOLDEN KERNELS. Best before a date that hasn't happened yet."); } },
+      crowbar:()=>A.say("You could. But it would hear you.") } }
+]},
+
+cubicles:{ hotspots:[
+  { r:[0,184,320,16], label:"back to the hallway", tap:()=>A.go("hallway","The hallway. Same as you left it. Exactly the same.") },
+  { r:[298,60,22,110], label:"a gap in the partitions", tap:()=>A.go("stairwell","Through the maze, a fire door, the stairwell.") },
+  { r:[52,56,54,26], label:"marks on the wall", tap:()=>A.say("Dozens of little eggs, scratched into the paint. Over and over. Some are circled.") },
+  { r:[150,118,40,16], label:"a desk drawer",
+    tap:()=>{ if(!F("drawerOpen")) A.say("A drawer, warped shut. Something rolls inside when you nudge it.");
+      else if(!F("drawerLooted")){ A.set("drawerLooted"); A.give("flashlight"); A.give("opener","In the drawer: a rubber flashlight (dead) and a rusted can opener."); }
+      else A.say("Paperclips arranged in a small spiral.",true); },
+    use:{ crowbar:()=>{ if(F("drawerOpen")) A.wrong(); else { A.set("drawerOpen"); A.say("The drawer shrieks open."); } } } },
+  { r:[210,80,30,22], label:"a monitor", tap:()=>A.say("The screensaver stopped mid-bounce years ago.",true) }
+]},
+
+stairwell:{ hotspots:[
+  { r:[0,184,320,16], label:"the door to the hallway", tap:()=>A.go("hallway","Back in the hallway. The lights notice you, then pretend they didn't.") },
+  { r:[240,74,80,100], label:"stairs, going up", tap:()=>A.go("cubicles","Up one flight: an identical floor. The cubicles again. Or ones just like them.") },
+  { r:[122,64,46,92], label:"a door marked EXIT",
+    tap:()=>{ A.set("shortcut",F("shortcut")); A.go("field","The push-bar gives. Daylight — but soft, and wrong, like it's coming from everywhere."); } },
+  { r:[16,128,86,62], label:"stairs, going down",
+    tap:()=>{ if(has("flashlit")) A.go("basement","Step by step, your light carving a little room out of the dark.");
+      else if(has("flashlight")) A.say("You click the flashlight. Dry snap. Dead. The dark below doesn't move.");
+      else A.say("The stairs go down into perfect black. Something hums under the building. You'd need light."); },
+    use:{ flashlit:()=>A.go("basement","Step by step, your light carving a little room out of the dark."),
+          flashlight:()=>A.say("Click. Click. Nothing. It needs a battery.") } }
+]},
+
+basement:{ hotspots:[
+  { r:[0,60,26,120], label:"stairs, back up", tap:()=>A.go("stairwell","Up, toward the ordinary dark instead of the real one.") },
+  { r:[42,66,30,50], label:"a breaker panel",
+    tap:()=>{ if(!F("power")){ A.set("power"); A.say("You pull the lever. Somewhere above, the building inhales. Lights buzz awake through the floor."); }
+      else A.say("The lever is up. The building is awake.",true); } },
+  { r:[212,48,66,126], label:"an old door",
+    tap:()=>{ if(F("coopOpen")) A.go("coop","The door swings inward on straw-smelling dark.");
+      else if(!F("eggPlaced")) A.say("An old wooden door. In its center: an egg-shaped hollow, worn smooth by hands. From beyond it — a soft, patient clucking.");
+      else A.say("The stone egg sits in its hollow. Beneath it, a small keyhole, newly revealed."); },
+    use:{ stoneegg:()=>{ if(F("eggPlaced")) A.wrong(); else { A.take("stoneegg"); A.set("eggPlaced"); A.say("The stone egg settles into the hollow like it grew there. Click. A keyhole slides open beneath it."); } },
+      brasskey:()=>{ if(!F("eggPlaced")) A.say("There's nowhere to put a key. Only the egg-shaped hollow.");
+        else if(F("coopOpen")) A.wrong();
+        else { A.take("brasskey"); A.set("coopOpen"); A.say("The brass key turns twice. Beyond the door, the clucking stops — listening."); } },
+      crowbar:()=>A.say("The door doesn't budge. It's not the kind of door you force.") } }
+]},
+
+field:{ hotspots:[
+  { r:[8,84,36,78], label:"a grey door, standing alone",
+    tap:()=>{ A.set("shortcut"); A.go("hallway","A grey office door, alone in the grass. It opens onto the hallway. Of course it does."); } },
+  { r:[298,60,22,120], label:"east, a worn path", tap:()=>A.go("path","An overgrown path. It remembers feet.") },
+  { r:[252,128,14,32], label:"something against the tower leg", vis:()=>!F("crowbarTaken"),
+    tap:()=>{ A.set("crowbarTaken"); A.give("crowbar","A crowbar, leaning against the tower's leg like someone just set it down."); } },
+  { r:[226,20,76,110], label:"the water tower", tap:()=>A.say("The water tower says nothing. Its ladder starts twenty feet up.",true) },
+  { r:[116,150,12,9], label:"a small white thing", vis:()=>!F("featherTaken"),
+    tap:()=>{ A.set("featherTaken"); A.give("feather","A single white feather. Warm, somehow."); } },
+  { r:[148,166,38,14], label:"a drain grate",
+    tap:()=>A.say(F("keyFished")?"A rusted grate. Just water-sound below now.":"A rusted grate in the grass. Far below, past any reach of fingers, something small glints."),
+    use:{ tool:()=>{ if(F("keyFished")) A.wrong(); else { A.set("keyFished"); A.give("brasskey","You lower the magnet on its twine. A soft tick. You reel up a small brass key."); } },
+      magnet:()=>A.say("The magnet's willing, but your arm is three feet too short. You'd need to lower it somehow."),
+      string:()=>A.say("The twine dangles uselessly. Nothing on the end to catch with."),
+      crowbar:()=>A.say("The grate lifts an inch. The glint is much, much farther down than that.") } }
+]},
+
+path:{ hotspots:[
+  { r:[0,60,22,120], label:"west, back to the field", tap:()=>A.go("field","The field. The tower. The door in the grass.") },
+  { r:[136,38,48,44], label:"north, deeper in", tap:()=>A.go("clearing","The trees open into a clearing, quiet as a held breath.") },
+  { r:[248,164,72,36], label:"downhill, toward the road", tap:()=>A.go("roadside","The trees thin. A road, and the last of the light.") },
+  { r:[206,92,20,10], label:"something on a branch", vis:()=>!F("stringTaken"),
+    tap:()=>{ A.set("stringTaken"); A.give("string","A length of twine, wound around a low branch by patient hands."); } },
+  { r:[40,80,60,80], label:"the trees", tap:()=>A.say("The trees lean together like they were talking about you.",true) }
+]},
+
+clearing:{ hotspots:[
+  { r:[0,184,320,16], label:"south, back to the path", tap:()=>A.go("path","Back on the path. The light hasn't changed. It never changes.") },
+  { r:[58,74,24,50], label:"marks on a tree", tap:()=>A.say("Egg shapes carved into the bark, old and healed-over. The same as the office walls.") },
+  { r:[138,138,40,20], label:"a fire pit", tap:()=>A.say("Cold ashes, ringed with river stones. Someone waited here a long time.",true) },
+  { r:[184,148,44,20], label:"a flat stone",
+    tap:()=>{ if(!F("rockMoved")) A.say("A flat stone, half-swallowed by moss. Scratched into its face: a small egg.");
+      else if(!F("eggTaken")){ A.set("eggTaken"); A.give("stoneegg","In the hollow beneath: an egg carved from stone, cool and heavier than it should be."); }
+      else A.say("An empty hollow, shaped like what you took.",true); },
+    use:{ crowbar:()=>{ if(F("rockMoved")) A.wrong(); else { A.set("rockMoved"); A.say("The stone levers up with a wet sigh."); } } } }
+]},
+
+roadside:{ hotspots:[
+  { r:[0,40,26,120], label:"back up the path", tap:()=>A.go("path","Uphill, into the trees, away from the road that goes nowhere twice.") },
+  { r:[54,74,40,80], label:"a bus stop sign", tap:()=>A.say("A bus stop. The schedule is a grid of empty boxes.") },
+  { r:[192,162,12,9], label:"something catching the light", vis:()=>!F("coinTaken"),
+    tap:()=>{ A.set("coinTaken"); A.give("coin","A coin, catching the very last of the light. Someone's fare, once."); } },
+  { r:[0,140,320,36], label:"the road", tap:()=>A.say("The road goes both ways to the same nowhere.",true) }
+]},
+
+coop:{ hotspots:[
+  { r:[0,184,320,16], label:"back through the door", tap:()=>A.go("basement","Back into the basement. The hum. The waiting.") },
+  { r:[180,96,80,60], label:"the roost",
+    tap:()=>{ if(!F("chickenOut")) A.say("Straw. Warm air. Two small eyes catch your light — then tuck away behind the roost.");
+      else A.say("The roost, still warm.",true); },
+    use:{ corn:()=>{ if(F("chickenOut")) A.wrong(); else { A.take("corn"); A.set("chickenOut"); A.say("You scatter the golden kernels. A pause. Then — soft, deliberate footfalls in the straw."); } },
+      corncan:()=>A.say("The can is sealed. Whatever's in the dark knows it, too."),
+      feather:()=>A.say("You hold up the feather. Somewhere in the dark, a quiet, answering cluck.") } },
+  { r:[140,120,52,50], label:"the chicken", vis:()=>F("chickenOut"),
+    tap:()=>{ A.say("She looks at you. You look at her. It's been a long way for both of you."); setTimeout(()=>A.win(),900); } }
+]}
+};
+
+/* idle-click flavor per area */
+const FLAVOR={
+  hallway:["The fluorescents hum a note you almost recognize.","Carpet the color of old weather.","The hallway is longer than the building."],
+  breakroom:["A clock with no hands.","Someone's mug: WORLD'S OKAYEST.","The chairs are pushed in all the way."],
+  cubicles:["Every cubicle is the same cubicle.","A phone, off the hook, politely silent.","You feel watched by nothing in particular."],
+  stairwell:["Your footsteps come back a half-second late.","Floor numbers painted over floor numbers.","Cold concrete. Honest, at least."],
+  basement:["The hum is louder down here. Almost a word.","Pipes sweat in the dark.","From beyond the old door: cluck. Cluck. Patience."],
+  field:["Grass to the ankles, moving without wind.","The dusk isn't getting darker. It's just staying.","Somewhere, a single soft cluck. Maybe the wind."],
+  path:["Leaves tick against leaves.","The path is worn by something small and certain.","Green going grey going green."],
+  clearing:["The quiet here has weight.","No birdsong. Not the ordinary kind, anyway.","The clearing holds its breath with you."],
+  roadside:["A car passed here once. Maybe.","The last light refuses to leave.","Gravel, glass, the smell of coming rain."],
+  coop:["Straw shifts, just out of the light.","It's warmer in here than anywhere else.","You are very close to the end of something."]
+};
+
+/* ================= renderer ============================================ */
+const W=320,H=200;
+const cv=document.getElementById("cv"), ctx=cv.getContext("2d");
+const img=ctx.createImageData(W,H), buf=new Uint32Array(img.data.buffer);
+function C(h){const n=parseInt(h.slice(1),16);return (0xff000000|((n&0xff)<<16)|(n&0xff00)|(n>>>16))>>>0;}
+const PAL={}; for(const p in PALETTES){ PAL[p]={}; for(const k in PALETTES[p]) PAL[p][k]=C(PALETTES[p][k]); }
+const B4=[[0,8,2,10],[12,4,14,6],[3,11,1,9],[15,7,13,5]];
+function P(x,y,c){ if(x>=0&&x<W&&y>=0&&y<H) buf[y*W+x]=c; }
+function R(x,y,w,h,c){ for(let j=y;j<y+h;j++)for(let i=x;i<x+w;i++)P(i,j,c); }
+/* dithered rect: mix 0..16 of c2 over c1; pass 0 as a color to leave those pixels untouched */
+function D(x,y,w,h,c1,c2,m){ for(let j=y;j<y+h;j++)for(let i=x;i<x+w;i++){const c=B4[j&3][i&3]<m?c2:c1; if(c)P(i,j,c);} }
+/* dithered vertical gradient c1(top)->c2(bottom) */
+function GV(x,y,w,h,c1,c2){ for(let j=0;j<h;j++){const m=Math.round(16*(j+.5)/h);for(let i=x;i<x+w;i++)P(i,y+j,B4[(y+j)&3][i&3]<m?c2:c1);} }
+function GH(x,y,w,h,c1,c2){ for(let i=0;i<w;i++){const m=Math.round(16*(i+.5)/w);for(let j=y;j<y+h;j++)P(x+i,j,B4[j&3][(x+i)&3]<m?c2:c1);} }
+function SPR(x,y,rows,scale){ scale=scale||1; for(let j=0;j<rows.length;j++)for(let i=0;i<rows[j].length;i++){const ch=rows[j][i],hxc=ICOLORS[ch]; if(hxc)R(x+i*scale,y+j*scale,scale,scale,C(hxc));} }
+
+const CHICKEN=[
+"..rr........",
+".rrr........",
+".wwww.......",
+"owwkww......",
+".wwwww..ww..",
+"..wwwwwwwww.",
+"..wwwwwwwwww",
+"..wwwwwwwww.",
+"...wwwwwww..",
+"....wwwww...",
+".....o.o....",
+"....oo.oo..."];
+
+/* ================= SCENES: procedural pixel art ======================== */
+const SCENES={
+
+hallway(t){ const p=PAL.cga;
+  R(0,0,W,H,p.BK);
+  /* ceiling */ D(0,0,W,44,p.DK,p.BK,10);
+  const pow=F("power");
+  for(let li=0;li<3;li++){ const lx=40+li*100;
+    const flick=pow&&(li!==1||((t>>1)&7)!==3); /* middle light flickers */
+    const on=pow?flick:( (li===1)&&((t>>2)&15)===7 ); /* unpowered: rare ghost flicker */
+    R(lx,16,44,7,on?p.WH:p.DG); if(on){ D(lx-8,23,60,21,p.BK,p.DC,4); }
+  }
+  /* back wall */ GV(0,44,W,104,p.DG,p.DK);
+  R(0,146,W,3,p.BK);
+  /* wainscot line */ D(0,120,W,26,p.DK,p.BR,5);
+  /* left doorway (stairwell) */ R(0,58,26,110,p.BK); R(24,58,3,110,p.GY); D(4,62,20,102,p.BK,p.DG,3);
+  /* right doorway (breakroom) */ R(294,58,26,110,p.BK); R(293,58,3,110,p.GY); D(298,62,20,102,p.BK,p.DC,2);
+  /* cubicles door */ R(126,62,50,92,p.DG); R(128,64,46,88,p.GY); D(128,64,46,88,p.GY,p.DG,6);
+  R(140,72,22,26,p.DC); D(140,72,22,26,p.DC,p.CY,6); /* wired glass */
+  for(let j=74;j<96;j+=4)R(141,j,20,1,p.DG);
+  R(166,110,4,6,p.DK); /* handle */
+  /* painted door */ R(210,64,44,88,p.DG); D(212,66,40,84,p.DG,p.BR,9); D(212,66,40,84,p.BR,p.OR,3);
+  R(212,146,40,4,p.DK); /* under-door gap */
+  P(220,148,C("#5c6b3f")); P(233,149,C("#5c6b3f")); P(244,148,C("#39452c")); /* grass hint */
+  /* notice */ R(61,71,20,26,p.DG); R(62,72,18,24,p.WH); D(62,72,18,24,p.WH,p.GY,4);
+  for(let j=76;j<92;j+=3)R(64,j,14,1,p.GY);
+  /* floor */ GV(0,150,W,50,p.GY,p.BK);
+  for(let j=150;j<200;j+=6) for(let i=((j/6)&1)*8;i<W;i+=16) D(i,j,8,6,0,p.DG,6);
+  if(pow){ D(48,152,44,40,0,p.DC,3); D(148,152,44,40,0,p.DC,((t>>1)&7)===3?0:3); D(248,152,44,40,0,p.DC,3); }
+},
+
+breakroom(t){ const p=PAL.cga;
+  R(0,0,W,H,p.BK); GV(0,0,W,150,p.DK,p.BK); R(0,148,W,2,p.BK);
+  /* window: bright dithered sky in a dark room */
+  R(98,52,60,54,p.DG); GV(100,54,56,30,C("#93a7b2"),C("#5b6c7e")); GV(100,84,56,20,C("#5b6c7e"),C("#39452c"));
+  R(127,54,2,50,p.DG); R(100,78,56,2,p.DG);
+  /* tower silhouette in window */ R(138,62,10,8,C("#39452c")); R(141,70,1,10,C("#39452c")); R(145,70,1,10,C("#39452c"));
+  D(60,106,140,44,p.BK,p.DC,2); /* window light on floor */
+  /* fridge */ R(20,70,54,92,p.DG); R(22,72,50,88,p.GY); D(22,72,50,88,p.GY,p.DG,8);
+  R(22,100,50,2,p.DG); R(66,84,3,10,p.DK);
+  if(!F("magnetTaken")){ SPR(58,94,["rrrr","r..r","rwwr"],2); }
+  /* table */ R(128,116,74,6,p.BR); D(128,116,74,6,p.BR,p.OR,4); R(132,122,4,28,p.DK); R(192,122,4,28,p.DK);
+  R(146,110,20,8,p.WH); D(146,110,20,8,p.WH,p.GY,5); /* napkin */
+  /* vending machine */ R(236,48,62,114,p.DK); R(238,50,58,110,p.DG); D(238,50,58,110,p.DG,p.BK,6);
+  R(244,58,30,70,p.BK);
+  if(F("power")){ D(244,58,30,70,p.BK,p.DC,5); R(246,64,26,3,p.CY); R(246,84,26,3,p.OR); R(246,104,26,3,p.CY);
+    if(!F("cornBought"))R(252,96,12,8,p.OR); R(280,88,4,6,((t>>2)&1)?p.CY:p.DC); }
+  else { R(280,88,4,6,p.DK); }
+  /* vent */ R(150,154,42,24,p.DG);
+  if(!F("ventOpen")){ R(152,156,38,20,p.GY); for(let j=158;j<174;j+=4)R(154,j,34,2,p.DK); }
+  else { R(152,156,38,20,p.BK); D(152,156,38,20,p.BK,p.DG,3);
+    if(!F("batteryTaken")){ R(166,166,10,6,p.GY); R(168,168,6,2,p.OR);} }
+  /* floor */ GV(0,150,W,50,p.DG,p.BK); for(let j=150;j<200;j+=6)for(let i=((j/6)&1)*8;i<W;i+=16)D(i,j,8,6,0,p.BK,6);
+  /* left doorway */ R(0,58,22,110,p.BK); R(21,58,2,110,p.GY);
+},
+
+cubicles(t){ const p=PAL.grey;
+  R(0,0,W,H,p.DK); GV(0,0,W,52,p.DG,p.DK);
+  R(30,12,50,5,p.LG); R(150,12,50,5,p.DK); R(250,12,50,5,p.LG); /* dead + live tubes */
+  GV(0,52,W,96,p.DG,p.DK);
+  /* egg scratches */ if(true){ const e=[[56,60],[70,66],[88,58],[62,74],[96,70],[80,76]];
+    for(const [ex,ey] of e){ P(ex+1,ey,p.WH);P(ex+2,ey,p.WH);P(ex,ey+1,p.WH);P(ex+3,ey+1,p.WH);P(ex,ey+2,p.WH);P(ex+3,ey+2,p.WH);P(ex+1,ey+3,p.WH);P(ex+2,ey+3,p.WH);}
+    /* circled one */ for(let a=0;a<20;a++){const th=a/20*6.283;P(Math.round(90+8*Math.cos(th)),Math.round(72+6*Math.sin(th)),p.CY);} }
+  /* far partition row */ for(let x=20;x<300;x+=70){ R(x,86,62,34,p.DG); D(x,86,62,34,p.DG,p.GY,5); R(x,86,62,2,p.LG); }
+  /* near partitions + desk */ R(0,120,110,60,p.GY); D(0,120,110,60,p.GY,p.DG,8); R(0,120,110,2,p.LG);
+  R(230,124,90,56,p.GY); D(230,124,90,56,p.GY,p.DG,8); R(230,124,90,2,p.LG);
+  /* desk */ R(136,112,70,6,p.TN); D(136,112,70,6,p.TN,p.DG,4); R(140,118,4,40,p.DG); R(198,118,4,40,p.DG);
+  /* drawer */ if(!F("drawerOpen")){ R(150,118,40,14,p.DG); R(151,119,38,12,p.GY); D(151,119,38,12,p.GY,p.DG,7); R(166,124,8,2,p.DK); }
+  else { R(150,118,40,6,p.GY); R(150,124,40,12,p.BK||p.DK); R(150,124,40,12,p.DK); D(150,124,40,12,p.DK,p.DG,4);
+    if(!F("drawerLooted")){ R(156,128,14,4,p.DG); R(156,128,4,4,p.LG); R(176,128,8,3,p.TN);} }
+  /* monitor */ R(208,78,34,26,p.DG); R(210,80,30,22,p.DK); D(210,80,30,22,p.DK,p.CY,1); P(224,90,p.CY);
+  /* floor */ GV(0,148,W,52,p.GY,p.DK); for(let j=148;j<200;j+=5)D(0,j,W,1,0,p.DG,5);
+  /* right gap */ R(298,58,22,112,p.DK); D(300,60,18,108,p.DK,p.DG,3);
+},
+
+stairwell(t){ const p=PAL.grey;
+  R(0,0,W,H,p.DK); GV(0,0,W,60,p.DG,p.DK);
+  GV(0,60,W,90,p.GY,p.DG); D(0,60,W,90,p.GY,p.DG,8);
+  /* EXIT door */ R(118,60,54,100,p.DG); R(122,64,46,92,p.LG); D(122,64,46,92,p.LG,p.GY,8);
+  R(126,104,36,5,p.DG); /* push bar */
+  R(130,48,30,10,p.DK); R(132,50,26,6,p.CY); D(132,50,26,6,p.CY,p.DK,6); /* EXIT sign */
+  /* stairs up right */ for(let s=0;s<7;s++){ R(236+s*12,150-s*11,84-s*12,8,p.GY); D(236+s*12,150-s*11,84-s*12,8,p.GY,p.DG,6); }
+  R(232,60,4,110,p.DG); /* rail */
+  /* stairs down left into black */ for(let s=0;s<6;s++){ R(20+s*4,140+s*9,80-s*8,7,p.DG); D(20+s*4,140+s*9,80-s*8,7,p.DG,p.DK,4+s*2); }
+  R(28,178,60,22,p.DK); D(28,168,64,32,p.DK,C("#050505"),12);
+  /* floor */ GV(0,158,W,42,p.DG,p.DK);
+  /* hallway door bottom hint */ D(120,188,80,12,p.DG,p.LG,3);
+},
+
+basement(t){ const p=PAL.cga;
+  R(0,0,W,H,C("#050505"));
+  /* flashlight cone */ for(let j=30;j<200;j++){ const w2=Math.round((j-30)*0.62)+6, cx=150;
+    const m=Math.max(1,7-Math.floor((j-30)/34)); D(cx-w2,j,w2*2,1,C("#050505"),p.DK,m); }
+  D(96,150,120,50,C("#050505"),p.BR,3); /* warm pool */
+  /* pipes */ D(0,20,W,8,C("#050505"),p.DG,5); D(0,34,W,4,C("#050505"),p.DG,3);
+  /* breaker panel */ R(40,64,34,54,p.DG); R(42,66,30,50,p.GY); D(42,66,30,50,p.GY,p.DG,8);
+  const lever=F("power"); R(54,lever?72:96,6,16,lever?p.CY:p.OR); R(52,88,10,4,p.DK);
+  /* old door */ R(208,44,74,134,p.DK); R(212,48,66,126,p.BR); D(212,48,66,126,p.BR,p.DK,9);
+  for(let j=52;j<170;j+=14)R(212,j,66,1,p.DK); /* planks */
+  if(F("coopOpen")){ R(216,52,26,120,C("#050505")); D(240,52,8,120,C("#050505"),p.BR,6); }
+  else{
+    /* egg hollow */ const ex=238,ey=98;
+    if(!F("eggPlaced")){ R(ex+4,ey,8,4,p.DK); R(ex+2,ey+4,12,8,p.DK); R(ex+4,ey+12,8,4,p.DK); D(ex+2,ey,12,16,p.DK,C("#050505"),8); }
+    else { R(ex+4,ey,8,4,p.GY); R(ex+2,ey+4,12,8,p.GY); R(ex+4,ey+12,8,4,p.GY); D(ex+2,ey,12,16,p.GY,p.DG,6);
+      R(ex+5,ey+18,6,6,p.DK); R(ex+7,ey+20,2,3,C("#050505")); /* keyhole */ }
+  }
+  /* stairs up */ for(let s=0;s<5;s++){ R(0,150-s*16,26-s*4,10,p.DG); D(0,150-s*16,26-s*4,10,p.DG,C("#050505"),8); }
+  /* floor */ D(0,178,W,22,C("#050505"),p.DG,3);
+},
+
+field(t){ const p=PAL.nature;
+  GV(0,0,W,110,p.SK1,p.SK2); GV(0,110,W,22,p.SK2,p.DO);
+  /* slow clouds */ const cx=(t>>3)%(W+80)-40; D(cx,22,52,7,0,p.WH,3); D(cx-90,40,40,5,0,p.WH,2);
+  /* ground */ GV(0,130,W,70,p.OL,p.DKG); D(0,130,W,70,p.OL,p.GL,4);
+  for(let i=0;i<40;i++){ const gx=(i*53)%W, gy=134+(i*37)%60; P(gx,gy,p.DO); P(gx,gy-1,p.GL); }
+  /* water tower */ R(232,24,64,36,p.DKG); D(232,24,64,36,p.DKG,p.DO,5); R(226,60,76,5,p.DKG);
+  R(238,20,52,6,p.DO); /* roof */
+  R(238,65,4,70,p.DKG); R(288,65,4,70,p.DKG); R(258,65,4,70,p.DKG);
+  R(238,90,54,3,p.DKG); R(238,116,54,3,p.DKG); /* cross braces */
+  if(!F("crowbarTaken")){ for(let j=0;j<26;j++)P(256+Math.floor(j/6),132+j,p.BK); P(256,131,p.WG); }
+  /* standing office door — no wall around it */
+  R(8,82,36,80,p.DKG); R(11,85,30,74,p.WG); D(11,85,30,74,p.WG,p.DO,7); R(36,118,3,6,p.BK);
+  D(6,160,42,6,p.DKG,p.BK,6); /* its shadow, long */
+  /* feather */ if(!F("featherTaken")){ R(118,152,6,2,p.WH); P(124,151,p.WH); P(117,153,p.WG); }
+  /* drain grate */ R(148,166,38,12,p.DKG); for(let i=152;i<184;i+=5)R(i,168,2,8,p.BK);
+  if(!F("keyFished") && ((t>>2)&7)===2) P(166,172,C("#e6c46a"));
+  /* long shadows */ D(226,138,76,8,0,p.DKG,7);
+},
+
+path(t){ const p=PAL.nature;
+  R(0,0,W,H,p.DO);
+  GV(0,0,W,70,p.SK1,p.SK2);
+  /* tree walls */ D(0,30,110,150,p.DO,p.DKG,9); D(210,30,110,150,p.DO,p.DKG,9);
+  for(let i=0;i<8;i++){ const tx=8+i*13; R(tx,40+(i*17)%30,4,120,p.DKG); }
+  for(let i=0;i<8;i++){ const tx=214+i*13; R(tx,36+(i*23)%34,4,130,p.DKG); }
+  /* canopy */ D(0,0,W,44,p.SK2,p.DO,7); D(0,0,W,26,p.DO,p.DKG,8);
+  /* opening north */ GV(136,38,48,44,p.SK1,p.OL); D(136,38,48,44,p.SK1,p.GL,5);
+  /* ground + path */ GV(0,120,W,80,p.OL,p.DKG); D(0,120,W,80,p.OL,p.DO,6);
+  for(let j=0;j<80;j++){ const w2=8+j; D(160-w2/2,120+j,w2,1,p.WG,p.OL,8); }
+  /* branch + twine */ R(196,90,36,3,p.DKG); R(228,86,10,3,p.DKG);
+  if(!F("stringTaken")){ R(208,93,3,8,C("#8a7a5e")); R(207,96,5,2,C("#8a7a5e")); }
+  /* fireflies / motes */ if(((t>>1)&7)===1)P(120+((t*7)%60),100+((t*3)%20),p.WH);
+},
+
+clearing(t){ const p=PAL.nature;
+  R(0,0,W,H,p.DO);
+  D(0,0,W,140,p.DO,p.DKG,6);  /* deep forest all around */
+  /* sky glinting through the canopy, fading downward */
+  D(0,0,W,18,p.DO,p.SK1,5); D(0,18,W,14,p.DO,p.SK2,6);
+  D(0,32,W,14,p.DO,p.SK2,4); D(0,46,W,12,p.DO,p.SK2,2); D(0,58,W,10,p.DO,p.SK2,1);
+  /* tree ring */ D(0,0,70,180,p.DO,p.DKG,12); D(250,0,70,180,p.DO,p.DKG,12);
+  for(let i=0;i<5;i++){ R(10+i*14,30+(i*19)%20,5,130,p.DKG); }
+  for(let i=0;i<5;i++){ R(254+i*14,26+(i*13)%24,5,136,p.DKG); }
+  /* carved tree */ R(56,60,16,110,p.DKG); D(56,60,16,110,p.DKG,p.DO,4);
+  const eggs=[[60,78],[63,94],[60,110]]; for(const [ex,ey] of eggs){ P(ex+1,ey,p.WG);P(ex+2,ey,p.WG);P(ex,ey+1,p.WG);P(ex+3,ey+1,p.WG);P(ex,ey+2,p.WG);P(ex+3,ey+2,p.WG);P(ex+1,ey+3,p.WG);P(ex+2,ey+3,p.WG);}
+  /* ground */ GV(0,140,W,60,p.GL,p.DKG); D(0,140,W,60,p.GL,p.OL,8);
+  /* fire pit */ for(let a=0;a<14;a++){ const th=a/14*6.283; R(Math.round(156+18*Math.cos(th)),Math.round(148+7*Math.sin(th)),3,2,p.WG); }
+  D(146,144,22,8,p.DKG,p.BK,10);
+  /* flat stone */ if(!F("rockMoved")){ R(186,150,38,14,p.WG); D(186,150,38,14,p.WG,p.DO,7);
+    /* scratched egg */ P(202,154,p.DKG);P(203,154,p.DKG);P(201,155,p.DKG);P(204,155,p.DKG);P(201,156,p.DKG);P(204,156,p.DKG);P(202,157,p.DKG);P(203,157,p.DKG); }
+  else { R(186,152,38,12,p.DKG); D(186,152,38,12,p.DKG,p.BK,8); R(182,146,34,10,p.WG); D(182,146,34,10,p.WG,p.DO,7);
+    if(!F("eggTaken")){ R(200,155,8,3,p.WH); R(199,156,10,4,p.WG); R(201,154,6,2,p.WG); } }
+},
+
+roadside(t){ const p=PAL.dusk;
+  R(0,0,W,H,p.S3);
+  GV(0,0,W,60,p.S1,p.S2); GV(0,60,W,58,p.S2,p.S3);
+  /* sun gone, glow left */ D(30,30,80,40,0,p.YL,2);
+  /* treeline */ D(0,96,W,26,p.S3,p.DG2,11); for(let i=0;i<26;i++)R(i*13,100+(i*7)%12,7,22,p.DG2);
+  /* road */ R(0,138,W,36,p.RD); D(0,138,W,36,p.RD,p.DR,7); GV(0,138,W,10,p.DR,p.RD);
+  for(let i=0;i<W;i+=28)R(i+((t>>4)&0),155,14,2,p.WH); /* centerline */
+  D(0,138,W,4,p.RD,p.S3,4); /* dusk sheen on asphalt */
+  /* shoulder */ GV(0,174,W,26,p.GS,p.DG2); D(0,174,W,26,p.GS,p.DG2,8);
+  /* bus sign */ R(72,86,4,68,p.SN); R(56,76,34,24,p.SN); D(56,76,34,24,p.SN,p.DR,5);
+  for(let j=80;j<96;j+=4)for(let i=60;i<86;i+=6)R(i,j,4,2,p.DR); /* empty grid */
+  D(70,154,40,5,0,p.DR,8); /* long shadow */
+  /* coin */ if(!F("coinTaken")){ P(196,166,p.YL); P(197,166,p.YL); P(196,167,p.YL);
+    if(((t>>2)&7)<2){ P(197,165,p.WH); P(195,167,p.WH);} }
+},
+
+coop(t){ const p=PAL.dark;
+  R(0,0,W,H,p.BK);
+  for(let j=40;j<200;j++){ const w2=Math.round((j-40)*0.7)+8; const m=Math.max(1,6-Math.floor((j-40)/40)); D(160-w2,j,w2*2,1,p.BK,p.DS,m); }
+  /* straw floor */ D(60,150,200,50,p.BK,p.DS,6); D(90,160,140,40,p.DS,p.ST,5);
+  for(let i=0;i<26;i++){ const sx=80+(i*29)%170, sy=155+(i*13)%40; P(sx,sy,p.WM); P(sx+1,sy,p.ST); }
+  /* roost */ R(180,120,80,4,p.DS); R(188,124,4,40,p.DS); R(244,124,4,40,p.DS);
+  D(176,96,90,28,p.BK,p.DS,3);
+  if(F("chickenOut")){ const bob=((t>>2)&1); SPR(146,128+bob,CHICKEN,3);
+    /* scattered corn */ for(let i=0;i<10;i++)P(130+(i*17)%80,180+(i*7)%12,C("#e6c46a")); }
+  else if(((t>>3)&7)===2){ P(216,110,p.CY); P(222,110,p.CY); }
+  /* door behind */ D(120,188,80,12,p.BK,p.DG,4);
+},
+
+ending(t){ const p=PAL.dark;
+  R(0,0,W,H,p.BK);
+  /* dithered halo */ for(let rr=5;rr>0;rr--){ const rad=rr*22;
+    for(let j=-rad;j<=rad;j++)for(let i=-rad;i<=rad;i++){ if(i*i+j*j<=rad*rad){ const x=160+i,y=96+j;
+      if(B4[y&3][x&3]<(6-rr)) P(x,y,p.DS); } } }
+  const bob=((t>>2)&1); SPR(160-24,96-24+bob,CHICKEN,4);
+  D(0,170,W,30,p.BK,p.DS,2);
+}
+};
+
+/* ================= draw loop =========================================== */
+let t=0, dirty=true;
+setInterval(()=>{ t++; drawFrame(); }, 90);
+function drawFrame(){
+  (S.won?SCENES.ending:SCENES[S.area])(t);
+  ctx.putImageData(img,0,0);
+}
+
+/* ================= input =============================================== */
+function canvasXY(ev){ const r=cv.getBoundingClientRect();
+  return [ Math.floor((ev.clientX-r.left)/r.width*W), Math.floor((ev.clientY-r.top)/r.height*H) ]; }
+/* smallest matching hotspot wins, so tiny pickups sit safely inside big zones */
+function spotAt(x,y){ let best=null, bestArea=Infinity;
+  for(const h of AREAS[S.area].hotspots){ if(h.vis&&!h.vis())continue;
+    const [rx,ry,rw,rh]=h.r;
+    if(x>=rx&&x<rx+rw&&y>=ry&&y<ry+rh && rw*rh<bestArea){ best=h; bestArea=rw*rh; } }
+  return best; }
+
+cv.addEventListener("pointermove",ev=>{ if(S.won)return; const [x,y]=canvasXY(ev); const h=spotAt(x,y);
+  document.getElementById("hint").innerHTML=h?("&#8250; "+h.label):"&nbsp;";
+  cv.classList.toggle("hot",!!h); });
+
+cv.addEventListener("pointerdown",ev=>{ ev.preventDefault(); ensureAudio(); if(S.won)return;
+  const [x,y]=canvasXY(ev); const h=spotAt(x,y);
+  if(!h){ if(S.sel){ S.sel=null; renderInv(); A.say("You put it away.",true); }
+    else { const fl=FLAVOR[S.area]||[]; if(fl.length)A.say(fl[Math.floor(Math.random()*fl.length)],true); } return; }
+  document.getElementById("hint").innerHTML="&nbsp;";
+  if(S.sel){ const it=S.sel;
+    if(h.use&&h.use[it]){ h.use[it](); S.sel=null; renderInv(); }
+    else { A.say("The "+ITEMS[it].name+" isn't what this wants.",true); S.sel=null; renderInv(); }
+  } else if(h.tap) h.tap();
+});
+
+/* ================= inventory UI ======================================== */
+function iconCanvas(id){ const c=document.createElement("canvas"); c.width=12; c.height=12;
+  const x=c.getContext("2d"); const rows=ICONS[id]||[];
+  for(let j=0;j<rows.length;j++)for(let i=0;i<rows[j].length;i++){ const col=ICOLORS[rows[j][i]];
+    if(col){ x.fillStyle=col; x.fillRect(i,j,1,1);} } return c; }
+function renderInv(){ const el=document.getElementById("inv"); el.innerHTML="";
+  for(const id of S.inv){ const d=document.createElement("div"); d.className="slot"+(S.sel===id?" sel":"");
+    d.dataset.name=ITEMS[id].name; d.appendChild(iconCanvas(id));
+    d.addEventListener("pointerdown",ev=>{ ev.preventDefault(); ev.stopPropagation(); onItemTap(id); });
+    el.appendChild(d); } }
+function onItemTap(id){
+  if(S.sel===null){ S.sel=id; A.say(ITEMS[id].name+".",true); renderInv(); return; }
+  if(S.sel===id){ S.sel=null; renderInv(); return; }
+  const a=S.sel,b=id;
+  for(const [x,y,res,msgTxt] of COMBOS){ if((a===x&&b===y)||(a===y&&b===x)){
+    A.take(a); A.take(b); A.give(res,msgTxt); return; } }
+  A.say("They don't fit together.",true); S.sel=null; renderInv();
+}
+
+/* ================= ambient audio (WebAudio, off by default) ============ */
+let AC=null, soundOn=false, humGain=null, windGain=null, cluckTimer=null;
+function ensureAudio(){ if(!soundOn||AC)return;
+  try{ AC=new (window.AudioContext||window.webkitAudioContext)(); }catch(e){ return; }
+  /* fluorescent hum */
+  const o1=AC.createOscillator(), o2=AC.createOscillator(); o1.type="sawtooth"; o2.type="sine";
+  o1.frequency.value=100; o2.frequency.value=200.3;
+  const hf=AC.createBiquadFilter(); hf.type="lowpass"; hf.frequency.value=420;
+  humGain=AC.createGain(); humGain.gain.value=0;
+  o1.connect(hf); o2.connect(hf); hf.connect(humGain); humGain.connect(AC.destination);
+  o1.start(); o2.start();
+  /* wind: looped filtered noise */
+  const len=2*AC.sampleRate, nb=AC.createBuffer(1,len,AC.sampleRate), d=nb.getChannelData(0);
+  let v=0; for(let i=0;i<len;i++){ v=v*0.98+(Math.random()*2-1)*0.05; d[i]=v; }
+  const ns=AC.createBufferSource(); ns.buffer=nb; ns.loop=true;
+  const wf=AC.createBiquadFilter(); wf.type="lowpass"; wf.frequency.value=380;
+  windGain=AC.createGain(); windGain.gain.value=0;
+  ns.connect(wf); wf.connect(windGain); windGain.connect(AC.destination); ns.start();
+  setAmbience();
+}
+function cluck(vol){ if(!AC)return; const t0=AC.currentTime;
+  for(let i=0;i<2+Math.floor(Math.random()*3);i++){ const st=t0+i*0.18+Math.random()*0.05;
+    const o=AC.createOscillator(); o.type="square";
+    o.frequency.setValueAtTime(340+Math.random()*60,st); o.frequency.exponentialRampToValueAtTime(240,st+0.09);
+    const g=AC.createGain(); g.gain.setValueAtTime(0.0001,st);
+    g.gain.exponentialRampToValueAtTime(vol,st+0.02); g.gain.exponentialRampToValueAtTime(0.0001,st+0.11);
+    o.connect(g); g.connect(AC.destination); o.start(st); o.stop(st+0.13); } }
+function setAmbience(){ if(!AC||!humGain)return;
+  const office=["hallway","breakroom","cubicles","stairwell","basement"].includes(S.area);
+  const nature=["field","path","clearing","roadside"].includes(S.area);
+  humGain.gain.setTargetAtTime(office?(F("power")?0.012:0.005):(S.area==="coop"?0.003:0),AC.currentTime,0.8);
+  windGain.gain.setTargetAtTime(nature?0.05:0,AC.currentTime,1.2);
+  clearInterval(cluckTimer); cluckTimer=null;
+  if(S.area==="basement"||S.area==="coop"||S.won){
+    cluckTimer=setInterval(()=>{ if(Math.random()<0.5)cluck(S.area==="basement"?0.015:0.05); },7000); }
+}
+document.getElementById("sndBtn").addEventListener("click",()=>{
+  soundOn=!soundOn; document.getElementById("sndBtn").innerHTML="&#9834; "+(soundOn?"on":"off");
+  if(soundOn){ ensureAudio(); if(AC&&AC.state==="suspended")AC.resume(); setAmbience(); }
+  else if(AC){ humGain.gain.setTargetAtTime(0,AC.currentTime,0.2); windGain.gain.setTargetAtTime(0,AC.currentTime,0.2);
+    clearInterval(cluckTimer); cluckTimer=null; } });
+
+/* ================= reset / restart ===================================== */
+function hardReset(){ store.removeItem(SAVE_KEY); S=DEFAULT_STATE();
+  document.getElementById("end").classList.remove("show");
+  A.say("The lights are on. Nobody said anything about it.",true);
+  renderInv(); save(); setAmbience(); }
+document.getElementById("rstBtn").addEventListener("click",()=>{ if(confirm("Forget everything and start over?"))hardReset(); });
+document.getElementById("againBtn").addEventListener("click",hardReset);
+
+/* ================= boot ================================================ */
+load();
+renderInv();
+if(S.won) document.getElementById("end").classList.add("show");
+drawFrame();
+</script>
+</body>
+</html>

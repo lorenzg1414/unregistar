@@ -1,0 +1,10 @@
+# local-only: huge photo originals (compressed copies live in assets/)
+juririri.jpg
+unregisttttt.jpg
+intuition.png
+*.psd
+# old game prototype, superseded by the embedded version in index.html
+game-dev.html
+# tooling & system files
+.claude/
+.DS_Store
